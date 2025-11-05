@@ -1,0 +1,209 @@
+{
+  // ============================================
+  // VSCode Settings for Unity Project
+  // Level 3: Program Files Only (Maximum Filter)
+  // ============================================
+
+  // Hide files and folders from File Explorer
+  "files.exclude": {
+    // Unity auto-generated folders (14GB+)
+    "Library/": true,
+    "Temp/": true,
+    "Logs/": true,
+    "obj/": true,
+    "Builds/": true,
+
+    // IDE and system folders
+    ".vs/": true,
+    ".utmp/": true,
+    "UserSettings/": true,
+
+    // Unity meta files (2,356 files)
+    "**/*.meta": true,
+
+    // System files
+    "**/.DS_Store": true,
+    "**/*.blob": true,
+
+    // Build outputs
+    "**/*.apk": true,
+
+    // ========================================
+    // Asset Files (Level 3: Hide All Assets)
+    // ========================================
+
+    // Unity scenes and prefabs
+    "**/*.unity": true,
+    "**/*.prefab": true,
+    "**/*.asset": true,
+    "**/*.mat": true,
+    "**/*.controller": true,
+    "**/*.anim": true,
+    "**/*.overrideController": true,
+
+    // Images and textures
+    "**/*.png": true,
+    "**/*.jpg": true,
+    "**/*.jpeg": true,
+    "**/*.psd": true,
+    "**/*.exr": true,
+    "**/*.tga": true,
+    "**/*.tif": true,
+    "**/*.tiff": true,
+    "**/*.gif": true,
+    "**/*.bmp": true,
+    "**/*.svg": true,
+
+    // 3D models
+    "**/*.fbx": true,
+    "**/*.obj": true,
+    "**/*.blend": true,
+    "**/*.blend1": true,
+    "**/*.max": true,
+    "**/*.mb": true,
+    "**/*.ma": true,
+
+    // Audio files
+    "**/*.wav": true,
+    "**/*.mp3": true,
+    "**/*.ogg": true,
+    "**/*.aif": true,
+    "**/*.aiff": true,
+
+    // Shader Graph files (visual editing)
+    "**/*.shadergraph": true,
+    "**/*.shadersubgraph": true,
+
+    // Unity UI Toolkit (visual editing)
+    "**/*.uxml": true,
+    "**/*.uss": true,
+
+    // Terrain and lighting
+    "**/*.terrainlayer": true,
+    "**/*.lighting": true,
+
+    // Other Unity asset types
+    "**/*.preset": true,
+    "**/*.physicMaterial": true,
+    "**/*.physicsMaterial2D": true,
+    "**/*.fontsettings": true,
+    "**/*.guiskin": true,
+    "**/*.flare": true,
+    "**/*.renderTexture": true,
+    "**/*.cubemap": true,
+
+    // Compiled libraries
+    "**/*.so": true,
+    "**/*.a": true,
+    "**/*.jar": true,
+    "**/*.aar": true,
+    "**/*.plist": true,
+
+    // Documentation folders (if keeping code docs, remove these)
+    "**/Documentation/": true,
+    "**/Samples/": true,
+    "**/Demo/": true,
+    "**/Examples/": true,
+
+    // Terrain auto-upgrade (processed files)
+    "**/_TerrainAutoUpgrade/": true
+  },
+
+  // Exclude from search
+  "search.exclude": {
+    "Library/": true,
+    "Temp/": true,
+    "Logs/": true,
+    "obj/": true,
+    "Builds/": true,
+    ".vs/": true,
+    ".utmp/": true,
+    "UserSettings/": true,
+    "**/*.meta": true,
+    "**/*.unity": true,
+    "**/*.prefab": true,
+    "**/*.asset": true,
+    "**/*.mat": true,
+    "**/*.png": true,
+    "**/*.jpg": true,
+    "**/*.psd": true,
+    "**/*.fbx": true,
+    "**/*.shadergraph": true,
+    "**/*.shadersubgraph": true,
+    "**/Documentation/": true,
+    "**/Samples/": true
+  },
+
+  // Exclude from file watching (improves performance)
+  "files.watcherExclude": {
+    "Library/**": true,
+    "Temp/**": true,
+    "Logs/**": true,
+    "obj/**": true,
+    "Builds/**": true,
+    ".vs/**": true,
+    ".utmp/**": true,
+    "**/*.meta": true,
+    "**/*.png": true,
+    "**/*.jpg": true,
+    "**/*.psd": true,
+    "**/*.fbx": true
+  },
+
+  // ============================================
+  // Editor Settings (Optional but Recommended)
+  // ============================================
+
+  // Auto-cleanup on save
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // C# specific settings
+  "[csharp]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+
+  // Shader file settings
+  "[shaderlab]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+
+  // JSON settings
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true
+  },
+
+  // Unity-specific file associations
+  "files.associations": {
+    "*.shader": "shaderlab",
+    "*.cginc": "shaderlab",
+    "*.hlsl": "hlsl",
+    "*.compute": "hlsl"
+  },
+
+  // ============================================
+  // Performance Settings
+  // ============================================
+
+  // Disable git for large folders
+  "git.ignoredRepositories": [
+    "${workspaceFolder}/Library",
+    "${workspaceFolder}/Temp"
+  ],
+
+  // Reduce file watching for performance
+  "files.watcherExclude": {
+    "**/Library/**": true,
+    "**/Temp/**": true,
+    "**/Logs/**": true,
+    "**/Builds/**": true
+  }
+}

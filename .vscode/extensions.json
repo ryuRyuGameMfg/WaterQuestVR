@@ -1,0 +1,18 @@
+{
+  // Recommended VSCode extensions for Unity C# development
+  "recommendations": [
+    // C# support
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+
+    // Unity specific
+    "visualstudiotoolsforunity.vstuc",
+
+    // Shader support
+    "slevesque.shader",
+
+    // General productivity
+    "editorconfig.editorconfig",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}
