@@ -167,3 +167,9 @@ gradlew.bat
 # Unity project archive folder (~ prefix makes Unity ignore it)
 /Assets/~Deprecated/
 /Assets/~Deprecated.meta
+Assets/Viking Village/Textures/Buildings/build_building_01_a.tif
+Assets/Viking Village/Textures/Buildings/build_building_02_a.tif
+Assets/Viking Village/Textures/wood_tiled_01_n.tif
+Assets/Viking Village/Textures/Buildings/build_building_01_n.tif
+Assets/Viking Village/Textures/Buildings/build_building_02_n.tif
+Assets/Viking Village/Textures/Skies/Daytime/SunsetSkyboxHDR.hdr
