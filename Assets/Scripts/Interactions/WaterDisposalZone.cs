@@ -53,6 +53,9 @@ public class WaterDisposalZone : MonoBehaviour
         // 水を空にする
         container.EmptyWater();
 
+        // ログ出力
+        Debug.Log($"[{gameObject.name}] 水を捨てました。廃棄水量: {amount:F0}L、環境汚染: -10");
+
         // GameManagerに記録
         GameManager.Instance.RecordWaste(amount);
         GameManager.Instance.Data.Stamina -= staminaCost;

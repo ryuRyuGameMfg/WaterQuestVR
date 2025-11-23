@@ -49,6 +49,7 @@ public class GameManager : MonoBehaviour
 
     public void EndGame()
     {
+        Debug.Log($"[GameManager] ゲーム終了！総タスク数: {Data.History.TotalTasksCompleted}、衛生スコア: {CalculateHygiene():F1}、効率スコア: {CalculateEfficiency():F1}");
         OnGameEnded?.Invoke();
         // ResultUI が自動的に表示される（OnGameEnded イベントを購読）
     }
@@ -62,6 +63,8 @@ public class GameManager : MonoBehaviour
         Data.History.WaterDrawn += amount;
         Data.History.DrawCount++;
 
+        Debug.Log($"[GameManager] 水を汲みました。水量: +{amount:F0}L、現在の総水量: {Data.WaterVolume:F0}L、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
+
         OnTaskCompleted?.Invoke();
         CheckGameCompletion();  // タスク完了後に自動チェック
     }
@@ -73,6 +76,8 @@ public class GameManager : MonoBehaviour
         Data.History.WaterUsedForFarming += amount;
         Data.History.FarmCount++;
 
+        Debug.Log($"[GameManager] 農業タスクを完了しました。消費水量: {amount:F0}L、水質: {Data.WaterQuality:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
+
         OnTaskCompleted?.Invoke();
         CheckGameCompletion();  // タスク完了後に自動チェック
     }
@@ -83,11 +88,14 @@ public class GameManager : MonoBehaviour
         bool isSafe = quality >= SAFE_QUALITY_THRESHOLD;
 
         // 体力変化
-        Data.Stamina += isSafe ? 10f : -10f;
+        float staminaChange = isSafe ? 10f : -10f;
+        Data.Stamina += staminaChange;
         Data.Stamina = Mathf.Clamp(Data.Stamina, 0f, 100f);
 
         Data.History.WaterUsedForDrinking += amount;
         Data.History.DrinkCount++;
+
+        Debug.Log($"[GameManager] 飲用タスクを完了しました。消費水量: {amount:F0}L、体力変化: {(staminaChange > 0 ? "+" : "")}{staminaChange:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
 
         OnTaskCompleted?.Invoke();
         CheckGameCompletion();  // タスク完了後に自動チェック
@@ -100,6 +108,8 @@ public class GameManager : MonoBehaviour
         Data.History.WaterWasted += amount;
         Data.History.WaterPolluted += amount;
         Data.History.WasteCount++;
+
+        Debug.Log($"[GameManager] 水を廃棄しました。廃棄水量: {amount:F0}L、環境汚染: -10、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
 
         OnTaskCompleted?.Invoke();
         CheckGameCompletion();  // タスク完了後に自動チェック

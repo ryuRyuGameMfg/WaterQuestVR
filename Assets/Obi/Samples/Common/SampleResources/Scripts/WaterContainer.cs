@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class WaterContainer : MonoBehaviour
 {
-    [Header("Å‘å—e—Ê (L)")]
+    [Header("æœ€å¤§å®¹é‡ (L)")]
     public float maxLiters = 5f;
 
-    [Header("Œ»İ—Ê (L)")]
+    [Header("ç¾åœ¨é‡ (L)")]
     public float currentLiters = 0f;
 
-    [Header("…¿ 0=‚«‚ê‚¢, 100=‰˜‚¢")]
+    [Header("æ°´è³ª 0=æ±šã„, 100=ãã‚Œã„")]
     [Range(0, 100)]
     public float quality = 0f;
 
@@ -18,7 +18,7 @@ public class WaterContainer : MonoBehaviour
     {
         float total = currentLiters + liters;
         if (total > maxLiters) total = maxLiters;
-        // ¿‚Ì¬‡F‘ÌÏ‰Ád•½‹Ï
+        // æ°´ã®å“è³ªã®é‡ã¿ä»˜ãå¹³å‡
         quality = (quality * currentLiters + incomingQuality * liters) / Mathf.Max(total, 0.0001f);
         currentLiters = total;
     }
