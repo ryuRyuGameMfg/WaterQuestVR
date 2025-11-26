@@ -14,7 +14,7 @@ public class WaterBucket : WaterVessel
         }
     }
 
-    protected override void OnTiltedOutsideTask()
+    protected override void OnTiltedOutsideTask(float amount, float quality)
     {
         // タスク場所外で傾けたら自動廃棄
         // （実際の廃棄処理はField, DrinkingPointで制御するため、ここでは何もしない）

@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: FluidPassTransparent
   m_EditorClassIdentifier: 
   voxelSize: 0.07
-  isosurface: 0.05
-  descentIterations: 2
-  descentIsosurface: 0.25
-  descentSpeed: 0.8
-  smoothingIterations: 1
-  smoothingIntensity: 0.8
-  bevel: 1
+  isosurface: 0.147
+  descentIterations: 0
+  descentIsosurface: 0
+  descentSpeed: 0
+  smoothingIterations: 0
+  smoothingIntensity: 1
+  bevel: 0
   materialType: 0
   customFluidMaterial: {fileID: 0}
   customUnderwaterMaterial: {fileID: 0}
@@ -27,14 +27,14 @@ MonoBehaviour:
   smoothness: 0.9
   metallic: 0
   turbidity: {r: 0.07058824, g: 0.972549, b: 0.8862745, a: 0}
-  thickness: 8
+  thickness: 4.52
   indexOfRefraction: 1.1
   diffuseMap: {fileID: 0}
   diffuseColor: {r: 0.07058824, g: 0.972549, b: 0.8862745, a: 1}
   normalMap: {fileID: 0}
   normalMapIntensity: 1
   normalMapVelocityRange: {x: 0, y: 0}
-  tiling: 1
+  tiling: 11.86
   noiseMap: {fileID: 0}
   noiseMapIntensity: 0.1
   noiseMapTiling: 0.1

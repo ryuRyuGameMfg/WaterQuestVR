@@ -16,7 +16,8 @@ public class DrinkingPoint : WaterReceiver
 
         // コップのみ受け付ける
         allowedVesselType = typeof(WaterCup);
-        // conditionType はインスペクターで設定（デフォルト: TiltDetection）
+        // 傾ける条件を設定
+        conditionType = ConditionType.TiltDetection;
         oneTimeExecution = true;
     }
 
@@ -24,12 +25,17 @@ public class DrinkingPoint : WaterReceiver
     {
         if (currentContainer == null) return;
 
-        // 水質チェック
+        // 既にWaterVessel.Update()でEmptyWater()が呼ばれている可能性がある
+        // 水質は空になる前に取得する必要がある
         float quality = currentContainer.WaterQuality;
+        float amount = currentContainer.MaxCapacity;
         bool isSafe = quality >= safeQualityThreshold;
 
-        // 水を空にする
-        currentContainer.EmptyWater();
+        // まだ満タンの場合は空にする（念のため）
+        if (currentContainer.IsFull)
+        {
+            currentContainer.EmptyWater();
+        }
 
         // ログ出力
         if (isSafe)
@@ -42,6 +48,6 @@ public class DrinkingPoint : WaterReceiver
         }
 
         // GameManagerに記録（体力変化も含む）
-        GameManager.Instance.RecordDrinking(waterConsumption, quality);
+        GameManager.Instance.RecordDrinking(amount, quality, safeStaminaGain, unsafeStaminaLoss);
     }
 }

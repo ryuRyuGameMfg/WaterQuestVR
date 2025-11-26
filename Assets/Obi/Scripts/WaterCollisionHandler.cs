@@ -17,11 +17,11 @@ public class WaterCollisionHandler : MonoBehaviour
         {
             if (emitter.name == cleanWaterEmitterName)
             {
-                dirt.Clean(10f); // ‰˜‚ê‚ğŒ¸‚ç‚·
+                dirt.Clean(10f); // ãã‚Œã„ã«ã™ã‚‹
             }
             else if (emitter.name == dirtyWaterEmitterName)
             {
-                dirt.Dirty(5f); // ‰˜‚ê‚ª‚³‚ç‚É‘‚¦‚éi”CˆÓj
+                dirt.Dirty(5f); // æ±šã‚ŒãŒå¢—ãˆã‚‹ï¼ˆä»»æ„ï¼‰
             }
         }
     }

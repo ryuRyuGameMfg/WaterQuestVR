@@ -14,7 +14,16 @@ public abstract class WaterReceiver : WaterInteractionBase
     [Tooltip("1回のみ実行するか")]
     [SerializeField] protected bool oneTimeExecution = true;
 
+    [Header("Visual Feedback")]
+    [Tooltip("マテリアルを変更するRenderer（自動取得も可能）")]
+    [SerializeField] protected Renderer targetRenderer;
+    [Tooltip("タスク実行前のマテリアル（通常の色）")]
+    [SerializeField] protected Material beforeMaterial;
+    [Tooltip("タスク実行後のマテリアル（完了後の色）")]
+    [SerializeField] protected Material afterMaterial;
+
     protected bool hasExecuted = false;
+    protected bool hasBeenCompleted = false;
 
     protected override void Awake()
     {
@@ -23,6 +32,22 @@ public abstract class WaterReceiver : WaterInteractionBase
         // デフォルト設定（インスペクターで変更可能）
         requiresFull = true; // 満タンの器具が必要
         // conditionType はインスペクターで設定（デフォルト: TiltDetection）
+
+        // Rendererの自動取得
+        if (targetRenderer == null)
+        {
+            targetRenderer = GetComponent<Renderer>();
+            if (targetRenderer == null)
+            {
+                targetRenderer = GetComponentInChildren<Renderer>();
+            }
+        }
+
+        // 初期マテリアルの設定
+        if (targetRenderer != null && beforeMaterial != null)
+        {
+            targetRenderer.material = beforeMaterial;
+        }
     }
 
     protected override void OnContainerEntered(WaterVessel container)
@@ -43,24 +68,76 @@ public abstract class WaterReceiver : WaterInteractionBase
     protected override bool CheckCondition()
     {
         // 1回実行制限のチェック
-        if (oneTimeExecution && hasExecuted) return false;
+        if (oneTimeExecution && hasExecuted)
+        {
+            Debug.Log($"[{gameObject.name}] CheckCondition: 既に実行済みです（hasExecuted=true, oneTimeExecution=true）");
+            return false;
+        }
 
-        return base.CheckCondition();
+        bool result = base.CheckCondition();
+        if (result)
+        {
+            Debug.Log($"[{gameObject.name}] CheckCondition: 条件が満たされました（hasExecuted={hasExecuted}, oneTimeExecution={oneTimeExecution}）");
+        }
+        return result;
     }
 
     protected override void ExecuteTask()
     {
-        if (currentContainer == null || !currentContainer.IsFull) return;
-        if (oneTimeExecution && hasExecuted) return;
+        if (currentContainer == null) return;
 
+        // 満タンでない場合はタスクを実行しない
+        // （WaterVessel.Update()で別の場所で傾けて空になった器具が範囲内に入った場合を防ぐ）
+        if (!currentContainer.IsFull)
+        {
+            Debug.Log($"[{gameObject.name}] ExecuteTask: 器具が既に空です。タスクを実行しません。");
+            return;
+        }
+
+        // 1回実行制限のチェック
+        if (oneTimeExecution && hasExecuted)
+        {
+            Debug.Log($"[{gameObject.name}] ExecuteTask: 既に実行済みです。");
+            return;
+        }
+
+        // 満タンの器具でタスクを実行
         ConsumeWater();
         hasExecuted = true;
         isExecuting = true;
+
+        // 視覚的フィードバック（マテリアル変更）
+        if (!hasBeenCompleted)
+        {
+            UpdateMaterial();
+            hasBeenCompleted = true;
+        }
     }
 
     /// <summary>
     /// 水を消費する処理（サブクラスで実装）
     /// </summary>
     protected abstract void ConsumeWater();
+
+    /// <summary>
+    /// マテリアルを変更して視覚的フィードバックを提供
+    /// </summary>
+    protected virtual void UpdateMaterial()
+    {
+        if (targetRenderer == null)
+        {
+            Debug.LogWarning($"[{gameObject.name}] Target Rendererが設定されていません。マテリアルを更新できません。");
+            return;
+        }
+
+        if (afterMaterial == null)
+        {
+            Debug.LogWarning($"[{gameObject.name}] After Materialが設定されていません。");
+            return;
+        }
+
+        targetRenderer.material = afterMaterial;
+        Debug.Log($"[{gameObject.name}] マテリアルを変更しました（タスク完了後）");
+    }
 }
 

@@ -10,11 +10,11 @@ public class WaterCup : WaterVessel
         // デフォルト値（インスペクターで上書き可能）
         if (maxCapacity == 0f)
         {
-            maxCapacity = 10f;
+            maxCapacity = 5f;
         }
     }
 
-    protected override void OnTiltedOutsideTask()
+    protected override void OnTiltedOutsideTask(float amount, float quality)
     {
         // タスク場所外で傾けたら自動廃棄
         // （実際の廃棄処理はDrinkingPointで制御するため、ここでは何もしない）

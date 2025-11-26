@@ -74,18 +74,75 @@ public abstract class WaterInteractionBase : MonoBehaviour
 
     protected virtual void Awake()
     {
-        // Trigger Colliderの設定確認（インスペクターで手動設定が必要）
+        Debug.Log($"[{gameObject.name}] WaterInteractionBase.Awake() が呼ばれました");
+
+        // Trigger Colliderの設定（インスペクターで設定されていない場合は自動取得）
         if (triggerCollider == null)
         {
-            Debug.LogError($"[{gameObject.name}] Trigger Colliderが設定されていません。インスペクターで「Trigger Collider」にColliderを割り当ててください。");
+            // まず自分自身から取得を試みる
+            triggerCollider = GetComponent<Collider>();
+
+            // 見つからなければ子オブジェクトから検索
+            if (triggerCollider == null)
+            {
+                triggerCollider = GetComponentInChildren<Collider>();
+            }
+
+            if (triggerCollider != null)
+            {
+                Debug.Log($"[{gameObject.name}] Trigger Collider を自動取得しました: {triggerCollider.gameObject.name}");
+            }
+            else
+            {
+                Debug.LogError($"[{gameObject.name}] Trigger Collider が見つかりません。インスペクターの「Trigger Collider」に対象の Collider（Is Trigger = true）を指定するか、GameObject に Collider コンポーネントを追加してください。");
+            }
         }
-        else if (!triggerCollider.isTrigger)
+        else
         {
-            Debug.LogWarning($"[{gameObject.name}] Trigger ColliderのIs Triggerがfalseです。trueに設定してください。");
+            Debug.Log($"[{gameObject.name}] Trigger Collider確認（インスペクター設定）: {triggerCollider.gameObject.name}, IsTrigger={triggerCollider.isTrigger}");
+        }
+
+        // Is Trigger の確認と警告
+        if (triggerCollider != null && !triggerCollider.isTrigger)
+        {
+            Debug.LogWarning($"[{gameObject.name}] Trigger Collider の Is Trigger が false です。トリガー判定が必要なため true に設定してください。");
         }
 
         // enumからTypeに変換
         ConvertVesselTypeEnumToType();
+        Debug.Log($"[{gameObject.name}] AllowedVesselType: {allowedVesselTypeEnum}, requiresFull: {requiresFull}");
+    }
+
+    protected virtual void Start()
+    {
+        Debug.Log($"[{gameObject.name}] WaterInteractionBase.Start() が呼ばれました。enabled={enabled}, gameObject.activeInHierarchy={gameObject.activeInHierarchy}");
+
+        // Trigger Colliderの最終確認
+        if (triggerCollider == null)
+        {
+            Debug.LogError($"[{gameObject.name}] ⚠️ Trigger Collider が指定されていません。OnTriggerEnter/Exit が動作しないため、必ず設定してください。");
+        }
+        else
+        {
+            Debug.Log($"[{gameObject.name}] ✅ Trigger Collider確認: {triggerCollider.gameObject.name}, IsTrigger={triggerCollider.isTrigger} (true である必要があります)");
+            if (!triggerCollider.isTrigger)
+            {
+                Debug.LogWarning($"[{gameObject.name}] ⚠️ Trigger Collider の Is Trigger が false のままです。インスペクターで true に変更してください。");
+            }
+        }
+
+        // Rigidbodyの確認（OnTriggerEnterが呼ばれるために必要）
+        Rigidbody rb = GetComponent<Rigidbody>();
+        Rigidbody rbChild = GetComponentInChildren<Rigidbody>();
+        if (rb == null && rbChild == null)
+        {
+            Debug.LogWarning($"[{gameObject.name}] ⚠️ Rigidbodyが見つかりません。OnTriggerEnterが呼ばれるには、少なくとも一方のオブジェクトにRigidbodyが必要です。");
+        }
+        else
+        {
+            Rigidbody foundRb = rb != null ? rb : rbChild;
+            Debug.Log($"[{gameObject.name}] ✅ Rigidbody確認: {foundRb.gameObject.name}, IsKinematic={foundRb.isKinematic}");
+        }
     }
 
     /// <summary>
@@ -112,7 +169,9 @@ public abstract class WaterInteractionBase : MonoBehaviour
 
     protected virtual void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"[{gameObject.name}] OnTriggerEnter: {other.gameObject.name} が範囲内に入りました");
+        Debug.Log($"[{gameObject.name}] ===== OnTriggerEnter 呼ばれました =====");
+        Debug.Log($"[{gameObject.name}] 衝突オブジェクト: {other.gameObject.name}");
+        Debug.Log($"[{gameObject.name}] triggerCollider: {(triggerCollider != null ? triggerCollider.gameObject.name : "null")}");
 
         WaterVessel container = other.GetComponent<WaterVessel>();
 
@@ -181,7 +240,25 @@ public abstract class WaterInteractionBase : MonoBehaviour
         // CollisionDetectionの場合はUpdateでチェックしない（OnTriggerEnterで実行済み）
         if (conditionType == ConditionType.CollisionDetection) return;
 
-        if (currentContainer == null || isExecuting) return;
+        if (currentContainer == null)
+        {
+            // デバッグログは毎フレーム出さない（1秒に1回程度）
+            if (Time.frameCount % 60 == 0)
+            {
+                Debug.Log($"[{gameObject.name}] Update: currentContainerがnullです。範囲内に器具がありません。");
+            }
+            return;
+        }
+
+        if (isExecuting)
+        {
+            // デバッグログは毎フレーム出さない
+            if (Time.frameCount % 60 == 0)
+            {
+                Debug.Log($"[{gameObject.name}] Update: 既に実行中です（isExecuting=true）");
+            }
+            return;
+        }
 
         // 条件判定
         bool conditionMet = CheckCondition();
@@ -270,7 +347,11 @@ public abstract class WaterInteractionBase : MonoBehaviour
     /// </summary>
     protected virtual bool CheckTiltAngle()
     {
-        if (currentContainer == null) return false;
+        if (currentContainer == null)
+        {
+            Debug.Log($"[{gameObject.name}] CheckTiltAngle: currentContainerがnullです");
+            return false;
+        }
 
         // 傾き判定
         float angleX = Mathf.Abs(currentContainer.transform.eulerAngles.x);
@@ -281,7 +362,14 @@ public abstract class WaterInteractionBase : MonoBehaviour
         if (angleZ > 180f) angleZ = 360f - angleZ;
 
         float maxAngle = Mathf.Max(angleX, angleZ);
-        return maxAngle > tiltAngleThreshold;
+        bool isTilted = maxAngle > tiltAngleThreshold;
+
+        if (isTilted)
+        {
+            Debug.Log($"[{gameObject.name}] CheckTiltAngle: 傾いています。angleX={angleX:F1}度, angleZ={angleZ:F1}度, maxAngle={maxAngle:F1}度, threshold={tiltAngleThreshold}度");
+        }
+
+        return isTilted;
     }
 
     // === サブクラスで実装するメソッド ===

@@ -12,19 +12,38 @@ public class WaterSource : WaterInteractionBase
     [SerializeField] private GameObject obiWaterObject;      // Obiの水オブジェクト
 
     [Header("Water Settings")]
-    [SerializeField] private float waterQuality = 100f;      // 汲める水の水質
-    [SerializeField] private float staminaCost = 10f;        // 体力コスト
-    [SerializeField] private float flowDuration = 2f;        // 水が出る時間（秒）
+    [Tooltip("汲める水の水質（0-100）")]
+    [Range(0f, 100f)]
+    [SerializeField] private float waterQuality = 100f;
+
+    [Tooltip("水を汲むときの体力消費量")]
+    [Range(0f, 100f)]
+    [SerializeField] private float staminaCost = 10f;
+
+    [Tooltip("水が出続ける時間（秒）\n• 2秒: 短時間\n• 5秒: 通常\n• 999999: 実質無限")]
+    [Min(0f)]
+    [SerializeField] private float flowDuration = 999999f;
+
+    [Tooltip("器具が範囲外に出たときに自動的に水を止めるか")]
+    [SerializeField] private bool stopOnExit = true;
 
     private bool isWaterFlowing = false;
 
     protected override void Awake()
     {
+        Debug.Log($"[{gameObject.name}] WaterSource.Awake() 開始");
         base.Awake();
 
         // デフォルト設定（インスペクターで変更可能）
         requiresFull = false; // 空の器具が必要
         // conditionType はインスペクターで設定（デフォルト: ButtonPress）
+        Debug.Log($"[{gameObject.name}] WaterSource.Awake() 完了。conditionType={conditionType}, requiresFull={requiresFull}");
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        Debug.Log($"[{gameObject.name}] WaterSource.Start() 完了");
     }
 
     protected override void OnContainerEntered(WaterVessel container)
@@ -35,8 +54,11 @@ public class WaterSource : WaterInteractionBase
 
     protected override void OnContainerExited(WaterVessel container)
     {
-        // 範囲外に出たら水を止める
-        StopWaterFlow();
+        // 範囲外に出たら水を止める（設定で制御可能）
+        if (stopOnExit)
+        {
+            StopWaterFlow();
+        }
     }
 
     protected override void ExecuteTask()
@@ -80,15 +102,17 @@ public class WaterSource : WaterInteractionBase
         currentContainer.FillWater(waterQuality);
 
         // ログ出力
-        Debug.Log($"[{gameObject.name}] 水が注がれました。水量: {currentContainer.MaxCapacity:F0}L");
+        Debug.Log($"[{gameObject.name}] 水が注がれました。水量: {currentContainer.MaxCapacity:F0}L、水質: {waterQuality:F0}、体力消費: {staminaCost:F0}");
 
         // GameManagerに記録
         float amount = currentContainer.MaxCapacity;
-        GameManager.Instance.RecordDrawWater(amount, waterQuality);
-        GameManager.Instance.Data.Stamina -= staminaCost;
+        GameManager.Instance.RecordDrawWater(amount, waterQuality, staminaCost);
 
-        // 一定時間後に水を止める
-        Invoke(nameof(StopWaterFlow), flowDuration);
+        // 一定時間後に水を止める（flowDurationが非常に大きい場合は実質的に無制限）
+        if (flowDuration < 999999f)
+        {
+            Invoke(nameof(StopWaterFlow), flowDuration);
+        }
     }
 
     private void StopWaterFlow()

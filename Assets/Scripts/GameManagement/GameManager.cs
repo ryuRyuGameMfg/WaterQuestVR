@@ -56,60 +56,94 @@ public class GameManager : MonoBehaviour
 
     // === 行動記録（各アクション実行時に呼ばれる） ===
 
-    public void RecordDrawWater(float amount, float quality)
+    public void RecordDrawWater(float amount, float quality, float staminaCost = 0f)
     {
-        Data.WaterVolume += amount;
-        Data.WaterQuality = Mathf.Max(Data.WaterQuality, quality); // 水質向上
+        Data.WaterVolume = Mathf.Max(0f, Data.WaterVolume + amount);
+        Data.WaterQuality = Mathf.Clamp(Mathf.Max(Data.WaterQuality, quality), 0f, 100f); // 水質向上
+        SpendStamina(staminaCost);
+
         Data.History.WaterDrawn += amount;
         Data.History.DrawCount++;
 
-        Debug.Log($"[GameManager] 水を汲みました。水量: +{amount:F0}L、現在の総水量: {Data.WaterVolume:F0}L、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
+        Debug.Log($"[GameManager] 水を汲みました。水量: +{amount:F0}L、現在の総水量: {Data.WaterVolume:F0}L、体力消費: {staminaCost:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
 
         OnTaskCompleted?.Invoke();
         CheckGameCompletion();  // タスク完了後に自動チェック
     }
 
-    public void RecordFarming(float amount)
+    public void RecordFarming(float amount, float qualityDecrease, float staminaCost)
     {
-        Data.WaterVolume -= amount;
-        Data.WaterQuality -= 5f; // 水質低下
+        Data.WaterVolume = Mathf.Max(0f, Data.WaterVolume - amount);
+        DecreaseWaterQuality(qualityDecrease);
+        SpendStamina(staminaCost);
+
         Data.History.WaterUsedForFarming += amount;
+        Data.History.WaterPolluted += amount;
         Data.History.FarmCount++;
 
-        Debug.Log($"[GameManager] 農業タスクを完了しました。消費水量: {amount:F0}L、水質: {Data.WaterQuality:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
+        Debug.Log($"[GameManager] 農業タスクを完了しました。消費水量: {amount:F0}L、水質低下: {qualityDecrease:F0}、体力消費: {staminaCost:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
 
         OnTaskCompleted?.Invoke();
         CheckGameCompletion();  // タスク完了後に自動チェック
     }
 
-    public void RecordDrinking(float amount, float quality)
+    public void RecordDrinking(float amount, float quality, float safeStaminaGain, float unsafeStaminaLoss)
     {
-        Data.WaterVolume -= amount;
+        Data.WaterVolume = Mathf.Max(0f, Data.WaterVolume - amount);
         bool isSafe = quality >= SAFE_QUALITY_THRESHOLD;
 
-        // 体力変化
-        float staminaChange = isSafe ? 10f : -10f;
-        Data.Stamina += staminaChange;
-        Data.Stamina = Mathf.Clamp(Data.Stamina, 0f, 100f);
+        if (isSafe)
+        {
+            RecoverStamina(safeStaminaGain);
+        }
+        else
+        {
+            SpendStamina(unsafeStaminaLoss);
+        }
 
         Data.History.WaterUsedForDrinking += amount;
         Data.History.DrinkCount++;
 
-        Debug.Log($"[GameManager] 飲用タスクを完了しました。消費水量: {amount:F0}L、体力変化: {(staminaChange > 0 ? "+" : "")}{staminaChange:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
+        // 水質80未満での飲用量を記録（衛生スコア計算用）
+        if (!isSafe)
+        {
+            Data.History.UnsafeDrinkingAmount += amount;
+        }
+
+        float staminaDelta = isSafe ? safeStaminaGain : -unsafeStaminaLoss;
+        Debug.Log($"[GameManager] 飲用タスクを完了しました。消費水量: {amount:F0}L、水質: {quality:F0}、体力変化: {(staminaDelta >= 0 ? "+" : "")}{staminaDelta:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
 
         OnTaskCompleted?.Invoke();
         CheckGameCompletion();  // タスク完了後に自動チェック
     }
 
-    public void RecordWaste(float amount)
+    public void RecordLaundry(float amount, float qualityDecrease, float staminaCost)
     {
-        Data.WaterVolume -= amount;
-        Data.WaterQuality -= 10f; // 環境汚染
+        Data.WaterVolume = Mathf.Max(0f, Data.WaterVolume - amount);
+        DecreaseWaterQuality(qualityDecrease);
+        SpendStamina(staminaCost);
+
+        Data.History.WaterUsedForWashing += amount;
+        Data.History.WaterPolluted += amount;
+        Data.History.WashCount++;
+
+        Debug.Log($"[GameManager] 洗濯タスクを完了しました。消費水量: {amount:F0}L、水質低下: {qualityDecrease:F0}、体力消費: {staminaCost:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
+
+        OnTaskCompleted?.Invoke();
+        CheckGameCompletion();  // タスク完了後に自動チェック
+    }
+
+    public void RecordWaste(float amount, float qualityDecrease, float staminaCost)
+    {
+        Data.WaterVolume = Mathf.Max(0f, Data.WaterVolume - amount);
+        DecreaseWaterQuality(qualityDecrease);
+        SpendStamina(staminaCost);
+
         Data.History.WaterWasted += amount;
         Data.History.WaterPolluted += amount;
         Data.History.WasteCount++;
 
-        Debug.Log($"[GameManager] 水を廃棄しました。廃棄水量: {amount:F0}L、環境汚染: -10、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
+        Debug.Log($"[GameManager] 水を廃棄しました。廃棄水量: {amount:F0}L、水質低下: {qualityDecrease:F0}、体力消費: {staminaCost:F0}、タスク数: {Data.History.TotalTasksCompleted}/{Data.MaxTasks}");
 
         OnTaskCompleted?.Invoke();
         CheckGameCompletion();  // タスク完了後に自動チェック
@@ -119,8 +153,13 @@ public class GameManager : MonoBehaviour
 
     public float CalculateHygiene()
     {
-        float totalUsed = Data.History.WaterUsedForDrinking + Data.History.WaterUsedForFarming;
-        float unsafeUsed = 0f;  // 簡易版では0（詳細版では水質80未満での飲用量を記録）
+        // 全使用量：飲用・農業・廃棄を含めた水使用総量（仕様書に基づく）
+        float totalUsed = Data.History.WaterUsedForDrinking +
+                          Data.History.WaterUsedForFarming +
+                          Data.History.WaterWasted;
+
+        // 不適切用途の使用量：水質が80未満の状態で飲用に使用した水量の合計
+        float unsafeUsed = Data.History.UnsafeDrinkingAmount;
 
         if (totalUsed == 0) return 100f;
         return (1f - (unsafeUsed / totalUsed)) * 100f;
@@ -129,9 +168,29 @@ public class GameManager : MonoBehaviour
     public float CalculateEfficiency()
     {
         float totalDrawn = Data.History.WaterDrawn;
-        float totalUsed = Data.History.WaterUsedForDrinking + Data.History.WaterUsedForFarming;
+        float totalUsed = Data.History.WaterUsedForDrinking + Data.History.WaterUsedForFarming + Data.History.WaterUsedForWashing;
 
         if (totalDrawn == 0) return 0f;
         return (totalUsed / totalDrawn) * 100f;
+    }
+
+    private void DecreaseWaterQuality(float amount)
+    {
+        if (amount <= 0f) return;
+        Data.WaterQuality = Mathf.Clamp(Data.WaterQuality - amount, 0f, 100f);
+    }
+
+    private void SpendStamina(float amount)
+    {
+        if (amount <= 0f) return;
+        Data.Stamina = Mathf.Clamp(Data.Stamina - amount, 0f, 100f);
+        Data.History.StaminaSpent += amount;
+    }
+
+    private void RecoverStamina(float amount)
+    {
+        if (amount <= 0f) return;
+        Data.Stamina = Mathf.Clamp(Data.Stamina + amount, 0f, 100f);
+        Data.History.StaminaRecovered += amount;
     }
 }
