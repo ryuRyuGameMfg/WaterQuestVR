@@ -1,12 +1,12 @@
 /**
 \mainpage Obi documentation
- 
+
 Introduction:
-------------- 
+-------------
 
 Obi is a position-based dynamics framework for unity. It enables the simulation of cloth, ropes and fluid in realtime, complete with two-way
 rigidbody interaction.
- 
+
 Features:
 -------------------
 
@@ -167,7 +167,8 @@ namespace Obi
 
         public uint usedSurfaceChunks
         {
-            get {
+            get
+            {
                 var system = GetRenderSystem(Oni.RenderingSystemType.Fluid) as ISurfaceChunkUser;
                 if (system == null)
                     return 0;
@@ -213,10 +214,10 @@ namespace Obi
         [Range(0, 1)]
         public float worldAngularInertiaScale = 0;          /**< how much does world-space angular inertia affect particles in the solver.*/
 
-        [HideInInspector] [NonSerialized] public List<ObiActor> actors = new List<ObiActor>();
-        [HideInInspector] [NonSerialized] private ParticleInActor[] m_ParticleToActor;
+        [HideInInspector][NonSerialized] public List<ObiActor> actors = new List<ObiActor>();
+        [HideInInspector][NonSerialized] private ParticleInActor[] m_ParticleToActor;
 
-        [HideInInspector] [NonSerialized] private Queue<ObiActor> addBuffer = new Queue<ObiActor>(); /**< actors pending insertion into the solver.*/
+        [HideInInspector][NonSerialized] private Queue<ObiActor> addBuffer = new Queue<ObiActor>(); /**< actors pending insertion into the solver.*/
 
         private ObiNativeIntList freeList;
         private Stack<int> freeGroupIDs = new Stack<int>();
@@ -239,11 +240,11 @@ namespace Obi
 
         public float timeSinceSimulationStart { get; private set; } = 0;
 
-        [HideInInspector] [NonSerialized] public bool dirtyDeformableTriangles = true;
-        [HideInInspector] [NonSerialized] public bool dirtyDeformableEdges = true;
-        [HideInInspector] [NonSerialized] public Oni.SimplexType dirtySimplices = Oni.SimplexType.All;
-        [HideInInspector] [NonSerialized] public int dirtyRendering = 0;
-        [HideInInspector] [NonSerialized] public int dirtyConstraints = 0;
+        [HideInInspector][NonSerialized] public bool dirtyDeformableTriangles = true;
+        [HideInInspector][NonSerialized] public bool dirtyDeformableEdges = true;
+        [HideInInspector][NonSerialized] public Oni.SimplexType dirtySimplices = Oni.SimplexType.All;
+        [HideInInspector][NonSerialized] public int dirtyRendering = 0;
+        [HideInInspector][NonSerialized] public int dirtyConstraints = 0;
 
         public bool synchronousSpatialQueries = false;
 
@@ -403,7 +404,7 @@ namespace Obi
         }
 
         /// <summary>
-        /// Solver bounds expressed in world space. 
+        /// Solver bounds expressed in world space.
         /// </summary>
         public UnityEngine.Bounds bounds
         {
@@ -411,7 +412,7 @@ namespace Obi
         }
 
         /// <summary>
-        /// Solver bounds expressed in the solver's local space. 
+        /// Solver bounds expressed in the solver's local space.
         /// </summary>
         public UnityEngine.Bounds localBounds
         {
@@ -1131,7 +1132,7 @@ namespace Obi
                 StartSimulation(Time.fixedDeltaTime, 1);
                 CompleteSimulation();
             }
-           
+
         }
 
         private void Update()
@@ -1621,7 +1622,7 @@ namespace Obi
 
                     // Update collision materials/rigidbodies after adding new actors to make sure collision materials are up to date.
                     // Also call it before SimulationStart, so that constraints referencing rigidbodies (such as Pin constraints in attachments)
-                    // use handle data that's up to date. 
+                    // use handle data that's up to date.
                     using (m_UpdateColliderWorld.Auto())
                     {
                         ObiColliderWorld.GetInstance().UpdateCollisionMaterials();
@@ -1675,7 +1676,7 @@ namespace Obi
                     FlushSpatialQueries();
 
                     // Divide each step into multiple substeps:
-                    float timeLeft = simulatedTime;         
+                    float timeLeft = simulatedTime;
                     for (int i = 0; i < frameSubsteps; ++i)
                     {
                         // Only update the solver if it is visible, or if we must simulate even when invisible.
@@ -1756,7 +1757,7 @@ namespace Obi
         /// <summary>
         /// Performs physics state interpolation and updates rendering.
         /// </summary>
-        /// <param name="unsimulatedTime"> Remaining time that could not be simulated during this frame (in seconds). This is used to interpolate physics state. </param>  
+        /// <param name="unsimulatedTime"> Remaining time that could not be simulated during this frame (in seconds). This is used to interpolate physics state. </param>
         public void Render(float unsimulatedTime)
         {
             if (!initialized)
@@ -1771,6 +1772,16 @@ namespace Obi
                     simulationHandle = implementation.ApplyInterpolation(simulationHandle, startPositions, startOrientations, Time.fixedDeltaTime, unsimulatedTime);
                     simulationHandle?.Complete();
                 }
+            }
+
+            // 【追加修正】simulateWhenInvisibleがfalseで、かつisVisibleがfalseの場合、
+            // 上記のifブロックがスキップされ、simulationHandle.Complete()が呼ばれません。
+            // しかし、直後のUpdateVisibility()内でGetBounds()が呼ばれ、完了していないジョブの結果にアクセスしようとして
+            // InvalidOperationExceptionが発生します。
+            // これを防ぐため、可視性チェックの前に必ずジョブを完了させます。
+            if (simulationHandle != null)
+            {
+                simulationHandle.Complete();
             }
 
             // test bounds against all cameras to update visibility.
@@ -1850,14 +1861,14 @@ namespace Obi
 
         /// <summary>
         /// Adds an actor to the solver.
-        /// </summary> 
+        /// </summary>
         /// Attemps to add the actor to this solver returning whether this was successful or not. In case the actor was already added, or had no reference to a blueprint, this operation will return false.
         /// If this was the first actor added to the solver, will attempt to initialize the solver.
         /// While in play mode, if the actor is sucessfully added to the solver, will also call actor.LoadBlueprint().
-        /// <param name="actor"> An actor.</param>  
+        /// <param name="actor"> An actor.</param>
         /// <returns>
         /// Whether the actor was sucessfully added.
-        /// </returns> 
+        /// </returns>
         public bool AddActor(ObiActor actor)
         {
             if (actor == null || actors == null || actor.sourceBlueprint == null || actor.sourceBlueprint.empty || actors.Contains(actor) || addBuffer.Contains(actor))
@@ -1873,16 +1884,16 @@ namespace Obi
             return true;
         }
 
-        /// <summary>  
-        /// Attempts to remove an actor from this solver, and returns  whether this was sucessful or not. 
+        /// <summary>
+        /// Attempts to remove an actor from this solver, and returns  whether this was sucessful or not.
         /// </summary>
-        /// Will only reurn true if the actor had been previously added successfully to this solver. 
+        /// Will only reurn true if the actor had been previously added successfully to this solver.
         /// If the actor is sucessfully removed from the solver, will also call actor.UnloadBlueprint(). Once the last actor is removed from the solver,
         /// this method will attempt to tear down the solver.
-        /// <param name="actor"> An actor.</param>  
+        /// <param name="actor"> An actor.</param>
         /// <returns>
         /// Whether the actor was sucessfully removed.
-        /// </returns> 
+        /// </returns>
         public bool RemoveActor(ObiActor actor)
         {
             if (actor == null)
@@ -1952,8 +1963,8 @@ namespace Obi
             OnParticleCountChanged?.Invoke(this);
         }
 
-        /// <summary>  
-        /// Updates solver parameters. 
+        /// <summary>
+        /// Updates solver parameters.
         /// </summary>
         /// Call this after modifying solver or constraint parameters.
         public void PushSolverParameters()
@@ -2000,15 +2011,15 @@ namespace Obi
 
         }
 
-        /// <summary>  
-        /// Returns the parameters used by a given constraint type. 
+        /// <summary>
+        /// Returns the parameters used by a given constraint type.
         /// </summary>
         /// If you know the type of the constraints at runtime,
         /// this is the same as directly accessing the appropiate public Oni.ConstraintParameters struct in the solver.
-        /// <param name="constraintType"> Type of the constraints whose parameters will be returned by this method.</param>  
+        /// <param name="constraintType"> Type of the constraints whose parameters will be returned by this method.</param>
         /// <returns>
         /// Parameters for the constraints of the specified type.
-        /// </returns> 
+        /// </returns>
         public Oni.ConstraintParameters GetConstraintParameters(Oni.ConstraintType constraintType)
         {
             switch (constraintType)
@@ -2034,13 +2045,13 @@ namespace Obi
             }
         }
 
-        /// <summary>  
+        /// <summary>
         /// Returns the runtime representation of constraints of a given type being simulated by this solver.
-        /// </summary>  
-        /// <param name="type"> Type of the constraints that will be returned by this method.</param>  
+        /// </summary>
+        /// <param name="type"> Type of the constraints that will be returned by this method.</param>
         /// <returns>
         /// The runtime constraints of the type speficied.
-        /// </returns> 
+        /// </returns>
         public IObiConstraints GetConstraintsByType(Oni.ConstraintType type)
         {
             int index = (int)type;
@@ -2245,7 +2256,7 @@ namespace Obi
         /**
          * Updates solver bounds, then checks if they're visible from at least one camera. If so, sets isVisible to true, false otherwise.
          */
-                    private void UpdateVisibility()
+        private void UpdateVisibility()
         {
 
             using (m_UpdateVisibilityPerfMarker.Auto())

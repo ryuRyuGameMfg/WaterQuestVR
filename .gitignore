@@ -53,6 +53,9 @@
 *.swp
 *~
 
+# Unity temporary assembly files
+TempAssembly.dll
+
 # ============================================
 # Unity Files
 # ============================================
