@@ -6,7 +6,7 @@ using UnityEngine;
 /// </summary>
 public class Laundry : WaterReceiver
 {
-    [Header("Laundry Settings")]
+    [Header("洗濯設定")]
     [SerializeField] private float qualityDecrease = 3f;     // 水質低下
 
     protected override void Awake()

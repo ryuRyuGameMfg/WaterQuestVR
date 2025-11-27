@@ -5,7 +5,7 @@ using UnityEngine;
 /// </summary>
 public class WaterDisposalZone : MonoBehaviour
 {
-    [Header("Disposal Settings")]
+    [Header("廃棄設定")]
     [SerializeField] private float qualityDecrease = 10f;  // 環境汚染
     [SerializeField] private float staminaCost = 2f;       // 体力コスト
 

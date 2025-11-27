@@ -51,7 +51,7 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log($"[GameManager] ゲーム終了！総タスク数: {Data.History.TotalTasksCompleted}、衛生スコア: {CalculateHygiene():F1}、効率スコア: {CalculateEfficiency():F1}");
         OnGameEnded?.Invoke();
-        // ResultUI が自動的に表示される（OnGameEnded イベントを購読）
+        // リザルト画面が強制的に表示される（GameUIManagerがOnGameEndedイベントを購読してShowResults()を呼び出す）
     }
 
     // === 行動記録（各アクション実行時に呼ばれる） ===

@@ -7,11 +7,11 @@ using UnityEngine.Serialization;
 /// </summary>
 public class WaterSource : WaterInteractionBase
 {
-    [Header("Water Effect")]
+    [Header("水エフェクト")]
     [FormerlySerializedAs("obiWaterEffect")]
     [SerializeField] private GameObject obiWaterObject;      // Obiの水オブジェクト
 
-    [Header("Water Settings")]
+    [Header("水設定")]
     [Tooltip("汲める水の水質（0-100）")]
     [Range(0f, 100f)]
     [SerializeField] private float waterQuality = 100f;
@@ -98,15 +98,17 @@ public class WaterSource : WaterInteractionBase
             obiWaterObject.SetActive(true);
         }
 
-        // 器具に水を満タンにする
-        currentContainer.FillWater(waterQuality);
+        // 器具に水を満タンにする（全容量で追加）
+        float addedAmount = currentContainer.FillWater(currentContainer.MaxCapacity, waterQuality);
 
         // ログ出力
-        Debug.Log($"[{gameObject.name}] 水が注がれました。水量: {currentContainer.MaxCapacity:F0}L、水質: {waterQuality:F0}、体力消費: {staminaCost:F0}");
+        Debug.Log($"[{gameObject.name}] 水が注がれました。追加量: {addedAmount:F0}L、現在の水量: {currentContainer.CurrentWaterAmount:F0}L/{currentContainer.MaxCapacity:F0}L、水質: {waterQuality:F0}、体力消費: {staminaCost:F0}");
 
-        // GameManagerに記録
-        float amount = currentContainer.MaxCapacity;
-        GameManager.Instance.RecordDrawWater(amount, waterQuality, staminaCost);
+        // GameManagerに記録（実際に追加された水量）
+        if (addedAmount > 0f)
+        {
+            GameManager.Instance.RecordDrawWater(addedAmount, waterQuality, staminaCost);
+        }
 
         // 一定時間後に水を止める（flowDurationが非常に大きい場合は実質的に無制限）
         if (flowDuration < 999999f)

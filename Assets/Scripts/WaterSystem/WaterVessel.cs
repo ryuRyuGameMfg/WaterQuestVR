@@ -7,33 +7,41 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public abstract class WaterVessel : MonoBehaviour
 {
-    [Header("Container Settings")]
+    [Header("容器設定")]
     [SerializeField] protected float maxCapacity = 80f;           // 最大容量
-    [SerializeField] protected float waterQuality = 100f;         // 水質
     [SerializeField] protected float pourAngleThreshold = 45f;    // 傾き閾値
 
-    [Header("Collider Settings")]
+    [Header("傾き検知クールダウン設定")]
+    [Tooltip("傾き検知後のクールダウン時間（秒）。連続実行を防ぐために使用")]
+    [Min(0f)]
+    [SerializeField] protected float tiltCooldownTime = 0.3f;
+
+    // 水質は受け取った水によって決まるため、インスペクターで設定できない
+    private float waterQuality = 0f;
+    // 現在の水量（重み付き平均計算用）
+    private float currentWaterAmount = 0f;
+
+    [Header("コライダー設定")]
     [Tooltip("当たり判定のCollider（インスペクターで割り当て、または自動取得）")]
     [SerializeField] protected Collider vesselCollider;
 
-    [Header("Visual Feedback")]
+    [Header("視覚的フィードバック")]
     [Tooltip("マテリアルを変更するRenderer（自動取得も可能）")]
     [SerializeField] protected Renderer vesselRenderer;
-    [Tooltip("空の時のマテリアル（水を受ける前）")]
+    [Tooltip("水を受ける前のマテリアル（空の時）")]
     [SerializeField] protected Material beforeMaterial;
-    [Tooltip("満タンの時のマテリアル（水を受けた後）")]
+    [Tooltip("水を受けた後のマテリアル（満タンの時）")]
     [SerializeField] protected Material afterMaterial;
-
-    // 2値管理（満タン/空）
-    protected bool isFull = false;
 
     // 傾き検知用フラグ（前フレームの状態を記録）
     private bool wasTiltedLastFrame = false;
+    private float lastTiltTime = -1f;
 
     // プロパティ
-    public bool IsFull => isFull;
+    public bool IsFull => currentWaterAmount >= maxCapacity;
     public float MaxCapacity => maxCapacity;
     public float WaterQuality => waterQuality;
+    public float CurrentWaterAmount => currentWaterAmount;
 
     /// <summary>
     /// 傾き判定（角度ベース）
@@ -165,33 +173,92 @@ public abstract class WaterVessel : MonoBehaviour
     }
 
     /// <summary>
-    /// 水を満タンにする
+    /// 水を減らす（部分的に空にする）
     /// </summary>
-    public virtual void FillWater(float quality)
+    /// <param name="amount">減らす水量</param>
+    public virtual void ReduceWater(float amount)
     {
-        if (isFull) return; // すでに満タンなら何もしない
+        if (amount <= 0f) return;
+        if (currentWaterAmount <= 0f) return;
 
-        isFull = true;
-        waterQuality = quality;
-        UpdateMaterial(); // マテリアルを更新（Water Materialに切り替え）
+        currentWaterAmount = Mathf.Max(0f, currentWaterAmount - amount);
 
-        // ログ出力
-        Debug.Log($"[{gameObject.name}] 水が満タンになりました。水量: {maxCapacity:F0}L、水質: {quality:F0}");
+        if (currentWaterAmount <= 0f)
+        {
+            waterQuality = 0f;
+        }
+
+        UpdateMaterial();
     }
 
     /// <summary>
-    /// 水を空にする
+    /// 水を追加する（重み付き平均で水質を計算）
+    /// </summary>
+    /// <param name="amount">追加する水量</param>
+    /// <param name="quality">追加する水の水質</param>
+    /// <returns>実際に追加された水量</returns>
+    public virtual float FillWater(float amount, float quality)
+    {
+        if (amount <= 0f) return 0f;
+
+        // 追加可能な水量を計算
+        float availableSpace = maxCapacity - currentWaterAmount;
+        float actualAmount = Mathf.Min(amount, availableSpace);
+
+        if (actualAmount <= 0f)
+        {
+            // 満タンの場合は何もしない
+            return 0f;
+        }
+
+        // 重み付き平均で水質を計算
+        if (currentWaterAmount > 0f)
+        {
+            // 既存の水がある場合：重み付き平均
+            float totalAmount = currentWaterAmount + actualAmount;
+            waterQuality = (waterQuality * currentWaterAmount + quality * actualAmount) / totalAmount;
+        }
+        else
+        {
+            // 空の場合は新しい水質をそのまま設定
+            waterQuality = quality;
+        }
+
+        // 水量を更新
+        currentWaterAmount += actualAmount;
+
+        // マテリアルを更新
+        UpdateMaterial();
+
+        // ログ出力
+        Debug.Log($"[{gameObject.name}] 水を追加しました。追加量: {actualAmount:F0}L、現在の水量: {currentWaterAmount:F0}L/{maxCapacity:F0}L、水質: {waterQuality:F1}");
+
+        return actualAmount;
+    }
+
+    /// <summary>
+    /// 水を満タンにする（互換性のためのメソッド、全容量で追加）
+    /// </summary>
+    /// <param name="quality">水の水質</param>
+    public virtual void FillWater(float quality)
+    {
+        FillWater(maxCapacity, quality);
+    }
+
+    /// <summary>
+    /// 水を空にする（全量を空にする）
     /// </summary>
     public virtual void EmptyWater()
     {
-        if (!isFull) return; // すでに空なら何もしない
+        if (currentWaterAmount <= 0f) return; // すでに空なら何もしない
 
-        isFull = false;
+        float emptiedAmount = currentWaterAmount;
+        currentWaterAmount = 0f;
         waterQuality = 0f;
-        UpdateMaterial(); // マテリアルを更新（Empty Materialに切り替え）
+        UpdateMaterial(); // マテリアルを更新（Before Materialに切り替え）
 
         // ログ出力
-        Debug.Log($"[{gameObject.name}] 水が空になりました。");
+        Debug.Log($"[{gameObject.name}] 水が空になりました。空にした水量: {emptiedAmount:F0}L");
     }
 
     /// <summary>
@@ -207,11 +274,11 @@ public abstract class WaterVessel : MonoBehaviour
             return;
         }
 
-        Material targetMaterial = isFull ? afterMaterial : beforeMaterial;
+        Material targetMaterial = (currentWaterAmount > 0f) ? afterMaterial : beforeMaterial;
 
         if (targetMaterial == null)
         {
-            Debug.LogWarning($"[{gameObject.name}] UpdateMaterial: {(isFull ? "After" : "Before")} Materialが設定されていません。インスペクターでマテリアルを割り当ててください。");
+            Debug.LogWarning($"[{gameObject.name}] UpdateMaterial: {(currentWaterAmount > 0f ? "After" : "Before")} Materialが設定されていません。インスペクターでマテリアルを割り当ててください。");
             return;
         }
 
@@ -221,8 +288,8 @@ public abstract class WaterVessel : MonoBehaviour
 
     protected virtual void Update()
     {
-        // 傾き検知（満タンの場合のみ）
-        if (isFull)
+        // 傾き検知（水がある場合のみ）
+        if (currentWaterAmount > 0f)
         {
             bool isTiltedNow = IsPouringAngle();
 
@@ -245,13 +312,20 @@ public abstract class WaterVessel : MonoBehaviour
     /// </summary>
     protected virtual void OnTilted()
     {
-        if (!isFull) return; // 既に空なら何もしない
+        if (currentWaterAmount <= 0f) return; // 既に空なら何もしない
+
+        // クールダウン中のチェック
+        if (Time.time - lastTiltTime < tiltCooldownTime)
+        {
+            return;
+        }
 
         // 水を空にする
-        float amount = maxCapacity;
+        float amount = currentWaterAmount;
         float quality = waterQuality;
 
         EmptyWater();
+        lastTiltTime = Time.time; // クールダウンタイマーを更新
 
         Debug.Log($"[{gameObject.name}] 傾けたため、水が空になりました。水量: {amount:F0}L");
 

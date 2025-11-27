@@ -12,7 +12,7 @@ public class GameUIManager : MonoBehaviour
         English = 1
     }
 
-    [Header("HUD Settings")]
+    [Header("HUD設定")]
     [SerializeField] private Canvas hudCanvas;
     [SerializeField] private TextMeshProUGUI taskProgressText;
     [SerializeField] private TextMeshProUGUI waterVolumeText;
@@ -21,13 +21,13 @@ public class GameUIManager : MonoBehaviour
     [Tooltip("水量表示モード: true=現在保持量, false=累積使用量")]
     [SerializeField] private bool showCurrentVolume = true;
 
-    [Header("Result UI Settings")]
+    [Header("リザルト画面設定")]
     [SerializeField] private GameObject resultPanel;
     [SerializeField] private TextMeshProUGUI summaryText;
     [SerializeField] private TextMeshProUGUI actionDetailsText;
     [SerializeField] private TextMeshProUGUI scoreText;
 
-    [Header("Localization Settings")]
+    [Header("ローカライゼーション設定")]
     [SerializeField] private LanguageOption language = LanguageOption.Japanese;
 
     private void Start()

@@ -8,15 +8,15 @@ using UnityEngine.Serialization;
 [RequireComponent(typeof(WaterVessel))]
 public class WaterVesselInteraction : WaterInteractionBase
 {
-    [Header("Water Source Settings")]
+    [Header("水を出す機能設定")]
     [Tooltip("水を出す機能を有効化")]
     [SerializeField] private bool enableWaterSource = true;
 
-    [Header("Water Receiver Settings")]
+    [Header("水を受ける機能設定")]
     [Tooltip("水を受ける機能を有効化")]
     [SerializeField] private bool enableWaterReceiver = true;
 
-    [Header("Water Transfer Settings")]
+    [Header("水の移動設定")]
     [FormerlySerializedAs("obiWaterEffect")]
     [SerializeField] private GameObject obiWaterObject;      // 水を出す時のObiエフェクト
     [SerializeField] private float transferAmount = 5f;       // 1回で移す水量
@@ -40,7 +40,7 @@ public class WaterVesselInteraction : WaterInteractionBase
         // デフォルト設定
         if (enableWaterSource)
         {
-            requiresFull = true; // 水を出すには満タンが必要
+            requiresFull = false; // 変更: 部分的に水があれば移せるようにする
             conditionType = ConditionType.TiltDetection; // 傾きで水を出す
         }
 
@@ -58,9 +58,9 @@ public class WaterVesselInteraction : WaterInteractionBase
         if (otherVessel == null || otherVessel == myVessel) return;
 
         // 水を受ける側として機能する場合
-        if (enableWaterReceiver && !myVessel.IsFull && otherVessel.IsFull)
+        if (enableWaterReceiver && !myVessel.IsFull && otherVessel.CurrentWaterAmount > 0f)
         {
-            // 空の自分が満タンの他の器具から水を受ける
+            // 空でない自分が水を持っている他の器具から水を受ける
             currentContainer = otherVessel;
 
             // CollisionDetectionの場合は即座に実行
@@ -74,9 +74,9 @@ public class WaterVesselInteraction : WaterInteractionBase
             }
         }
         // 水を出す側として機能する場合
-        else if (enableWaterSource && myVessel.IsFull && !otherVessel.IsFull)
+        else if (enableWaterSource && myVessel.CurrentWaterAmount > 0f && !otherVessel.IsFull)
         {
-            // 満タンの自分が空の他の器具に水を出す
+            // 水を持っている自分が空でない他の器具に水を出す
             currentContainer = otherVessel;
 
             // CollisionDetectionの場合は即座に実行
@@ -101,13 +101,13 @@ public class WaterVesselInteraction : WaterInteractionBase
         if (isTransferring) return;
         if (currentContainer == null) return;
 
-        // 水を出す側として実行
-        if (enableWaterSource && myVessel.IsFull && !currentContainer.IsFull)
+        // 水を出す側として実行（部分的に水があれば移せる）
+        if (enableWaterSource && myVessel.CurrentWaterAmount > 0f && !currentContainer.IsFull)
         {
             TransferWaterOut();
         }
         // 水を受ける側として実行（CollisionDetection以外の場合）
-        else if (enableWaterReceiver && !myVessel.IsFull && currentContainer.IsFull)
+        else if (enableWaterReceiver && !myVessel.IsFull && currentContainer.CurrentWaterAmount > 0f)
         {
             TransferWaterIn();
         }
@@ -119,7 +119,7 @@ public class WaterVesselInteraction : WaterInteractionBase
     private void TransferWaterOut()
     {
         if (currentContainer == null || currentContainer.IsFull) return;
-        if (!myVessel.IsFull) return;
+        if (myVessel.CurrentWaterAmount <= 0f) return; // 変更: IsFullからCurrentWaterAmountに変更（部分的に水があれば移せる）
 
         isTransferring = true;
         isExecuting = true;
@@ -131,13 +131,18 @@ public class WaterVesselInteraction : WaterInteractionBase
         }
 
         // 水を移す
-        float actualAmount = Mathf.Min(transferAmount, myVessel.MaxCapacity);
+        float transferableAmount = Mathf.Min(transferAmount, myVessel.CurrentWaterAmount);
         float quality = myVessel.WaterQuality;
-        currentContainer.FillWater(quality);
-        myVessel.EmptyWater();
+        float actualTransferredAmount = currentContainer.FillWater(transferableAmount, quality);
+
+        // 移した分だけ減らす
+        if (actualTransferredAmount > 0f)
+        {
+            myVessel.ReduceWater(actualTransferredAmount);
+        }
 
         // ログ出力
-        Debug.Log($"[{gameObject.name}] {currentContainer.gameObject.name}に水を移しました。水量: {actualAmount:F0}L、水質: {quality:F0}");
+        Debug.Log($"[{gameObject.name}] {currentContainer.gameObject.name}に水を移しました。移動量: {actualTransferredAmount:F0}L、残り水量: {myVessel.CurrentWaterAmount:F0}L/{myVessel.MaxCapacity:F0}L、水質: {quality:F0}");
 
         // 一定時間後にエフェクト停止
         Invoke(nameof(StopTransfer), transferDuration);
@@ -148,19 +153,25 @@ public class WaterVesselInteraction : WaterInteractionBase
     /// </summary>
     private void TransferWaterIn()
     {
-        if (currentContainer == null || !currentContainer.IsFull) return;
+        if (currentContainer == null || currentContainer.CurrentWaterAmount <= 0f) return;
         if (myVessel.IsFull) return;
 
         isTransferring = true;
         isExecuting = true;
 
-        // 水を受ける
+        // 水を受ける（全量を移す）
+        float transferableAmount = Mathf.Min(currentContainer.CurrentWaterAmount, myVessel.MaxCapacity - myVessel.CurrentWaterAmount);
         float quality = currentContainer.WaterQuality;
-        myVessel.FillWater(quality);
-        currentContainer.EmptyWater();
+        float actualTransferredAmount = myVessel.FillWater(transferableAmount, quality);
+
+        // 移した分だけ減らす
+        if (actualTransferredAmount > 0f)
+        {
+            currentContainer.ReduceWater(actualTransferredAmount);
+        }
 
         // ログ出力
-        Debug.Log($"[{gameObject.name}] {currentContainer.gameObject.name}から水を受け取りました。水量: {myVessel.MaxCapacity:F0}L、水質: {quality:F0}");
+        Debug.Log($"[{gameObject.name}] {currentContainer.gameObject.name}から水を受け取りました。移動量: {actualTransferredAmount:F0}L、現在の水量: {myVessel.CurrentWaterAmount:F0}L/{myVessel.MaxCapacity:F0}L、水質: {quality:F0}");
 
         // 処理完了
         isTransferring = false;
@@ -185,12 +196,12 @@ public class WaterVesselInteraction : WaterInteractionBase
         if (conditionType == ConditionType.CollisionDetection) return false;
 
         // 水を出す側の場合
-        if (enableWaterSource && myVessel.IsFull && currentContainer != null && !currentContainer.IsFull)
+        if (enableWaterSource && myVessel.CurrentWaterAmount > 0f && currentContainer != null && !currentContainer.IsFull)
         {
             return base.CheckCondition();
         }
         // 水を受ける側の場合（CollisionDetection以外は通常通り）
-        else if (enableWaterReceiver && !myVessel.IsFull && currentContainer != null && currentContainer.IsFull)
+        else if (enableWaterReceiver && !myVessel.IsFull && currentContainer != null && currentContainer.CurrentWaterAmount > 0f)
         {
             return base.CheckCondition();
         }

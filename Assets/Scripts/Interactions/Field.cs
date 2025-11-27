@@ -5,7 +5,7 @@ using UnityEngine;
 /// </summary>
 public class Field : WaterReceiver
 {
-    [Header("Field Settings")]
+    [Header("畑設定")]
     [SerializeField] private float qualityDecrease = 50f;    // 水質低下
 
     protected override void Awake()

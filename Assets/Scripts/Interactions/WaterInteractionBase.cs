@@ -6,7 +6,7 @@ using UnityEngine;
 /// </summary>
 public abstract class WaterInteractionBase : MonoBehaviour
 {
-    [Header("Trigger Settings")]
+    [Header("トリガー設定")]
     [Tooltip("当たり判定の範囲（Colliderが必要）")]
     [SerializeField] protected Collider triggerCollider;
 
@@ -37,15 +37,15 @@ public abstract class WaterInteractionBase : MonoBehaviour
         ThumbstickPressLeft = 9     // スティック押し込み左
     }
 
-    [Header("Condition Settings")]
+    [Header("条件設定")]
     [Tooltip("タスク実行の条件タイプ")]
     [SerializeField] protected ConditionType conditionType = ConditionType.ButtonPress;
 
-    [Header("Button Settings")]
+    [Header("ボタン設定")]
     [Tooltip("ボタン条件の場合のボタン選択")]
     [SerializeField] protected QuestButton triggerButton = QuestButton.AButtonRight;
 
-    [Header("Tilt Settings")]
+    [Header("傾き設定")]
     [Tooltip("傾き条件の場合の閾値（度）")]
     [SerializeField] protected float tiltAngleThreshold = 45f;
 
@@ -59,7 +59,7 @@ public abstract class WaterInteractionBase : MonoBehaviour
         WaterCup = 2     // コップのみ
     }
 
-    [Header("Container Filter")]
+    [Header("容器フィルター")]
     [Tooltip("対象となる器具の型")]
     [SerializeField] protected AllowedVesselType allowedVesselTypeEnum = AllowedVesselType.All;
     [Tooltip("満タンが必要か（true = 満タン、false = 空）")]

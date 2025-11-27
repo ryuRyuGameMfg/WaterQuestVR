@@ -5,7 +5,7 @@ using UnityEngine;
 /// </summary>
 public class DrinkingPoint : WaterReceiver
 {
-    [Header("Drinking Settings")]
+    [Header("飲用設定")]
     [SerializeField] private float safeStaminaGain = 10f;         // 安全な水の体力回復
     [SerializeField] private float unsafeStaminaLoss = 10f;       // 汚染水の体力減少
     [SerializeField] private float safeQualityThreshold = 80f;    // 安全閾値

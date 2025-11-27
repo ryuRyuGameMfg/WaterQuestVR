@@ -6,15 +6,20 @@ using UnityEngine;
 /// </summary>
 public abstract class WaterReceiver : WaterInteractionBase
 {
-    [Header("Water Consumption Settings")]
+    [Header("水消費設定")]
     [SerializeField] protected float waterConsumption = 50f;   // 消費する水量
     [SerializeField] protected float staminaCost = 15f;        // 体力コスト
 
-    [Header("One-Time Execution")]
+    [Header("1回実行設定")]
     [Tooltip("1回のみ実行するか")]
     [SerializeField] protected bool oneTimeExecution = true;
 
-    [Header("Visual Feedback")]
+    [Header("クールダウン設定")]
+    [Tooltip("タスク実行後のクールダウン時間（秒）。連続実行を防ぐために使用")]
+    [Min(0f)]
+    [SerializeField] protected float cooldownTime = 0.5f;
+
+    [Header("視覚的フィードバック")]
     [Tooltip("マテリアルを変更するRenderer（自動取得も可能）")]
     [SerializeField] protected Renderer targetRenderer;
     [Tooltip("タスク実行前のマテリアル（通常の色）")]
@@ -24,6 +29,7 @@ public abstract class WaterReceiver : WaterInteractionBase
 
     protected bool hasExecuted = false;
     protected bool hasBeenCompleted = false;
+    private float lastExecutionTime = -1f;
 
     protected override void Awake()
     {
@@ -67,6 +73,12 @@ public abstract class WaterReceiver : WaterInteractionBase
 
     protected override bool CheckCondition()
     {
+        // クールダウン中のチェック
+        if (Time.time - lastExecutionTime < cooldownTime)
+        {
+            return false;
+        }
+
         // 1回実行制限のチェック
         if (oneTimeExecution && hasExecuted)
         {
@@ -105,6 +117,7 @@ public abstract class WaterReceiver : WaterInteractionBase
         ConsumeWater();
         hasExecuted = true;
         isExecuting = true;
+        lastExecutionTime = Time.time; // クールダウンタイマーを更新
 
         // 視覚的フィードバック（マテリアル変更）
         if (!hasBeenCompleted)

@@ -730,7 +730,7 @@ MonoBehaviour:
   m_Name: WebGL
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
-  - {fileID: 1164498249447916022}
+  - {fileID: 8003459451759076702}
   m_renderMode: 1
   m_latencyOptimization: 0
   m_autoColorSubmissionMode: 1
@@ -2204,7 +2204,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4710975c7840e7d499bbb3757c22b0a5, type: 3}
   m_Name: MetaXRSubsampledLayout Android
   m_EditorClassIdentifier: Oculus.VR::Meta.XR.MetaXRSubsampledLayout
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Meta XR Subsampled Layout
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.subsampledLayout
@@ -2592,29 +2592,29 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
-  - {fileID: 4299708511609037920}
-  - {fileID: 5053469165372337607}
-  - {fileID: 4823591504394757957}
-  - {fileID: -5272232214723300463}
-  - {fileID: -7246568910387563697}
-  - {fileID: 814051827473326792}
-  - {fileID: 5823466861955510467}
-  - {fileID: 1092426114414207020}
-  - {fileID: 4100470238618534590}
-  - {fileID: -7720013202592626044}
-  - {fileID: 5340527436179899400}
-  - {fileID: 4061831269729068246}
-  - {fileID: 1835109975627970008}
-  - {fileID: -7775639487103450719}
-  - {fileID: 6594651488701403492}
-  - {fileID: 36404210612409624}
-  - {fileID: -721362295818638569}
-  - {fileID: 5091283457980103468}
-  - {fileID: -2446970241711541881}
-  - {fileID: 2090174033943572718}
-  - {fileID: 728555353583485624}
-  - {fileID: 3370362051054581449}
-  - {fileID: 1945532933559865141}
+  - {fileID: 8938848516019501558}
+  - {fileID: 5314344978722955036}
+  - {fileID: 7963476381490112103}
+  - {fileID: 3177708844885847839}
+  - {fileID: 3240887718493726927}
+  - {fileID: 2820592882144963227}
+  - {fileID: 5001302273856107283}
+  - {fileID: 1352756677510348072}
+  - {fileID: 6945792804584453101}
+  - {fileID: 8509058099633175515}
+  - {fileID: -6735166603884156918}
+  - {fileID: 9130150175091441403}
+  - {fileID: 7337043267209569679}
+  - {fileID: -927373911331826844}
+  - {fileID: -6328973313577209512}
+  - {fileID: 690862327976081187}
+  - {fileID: 5018464795320497938}
+  - {fileID: 5484991241690421059}
+  - {fileID: -1116798731152943179}
+  - {fileID: 6663083897666910464}
+  - {fileID: -922570395990277696}
+  - {fileID: 828679744640518878}
+  - {fileID: 5828762226645371070}
   m_renderMode: 1
   m_latencyOptimization: 0
   m_autoColorSubmissionMode: 1
@@ -3139,7 +3139,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: feeef8d85de8db242bdda70cc7ff5acd, type: 3}
   m_Name: OculusTouchControllerProfile Android
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.Features.Interactions.OculusTouchControllerProfile
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Oculus Touch Controller Profile
   version: 0.0.1
   featureIdInternal: com.unity.openxr.feature.input.oculustouch
@@ -3845,7 +3845,7 @@ MonoBehaviour:
   m_Name: iPhone
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
-  - {fileID: -5646763509213977974}
+  - {fileID: 5248436854558057915}
   m_renderMode: 1
   m_latencyOptimization: 0
   m_autoColorSubmissionMode: 1
@@ -4034,29 +4034,29 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
-  - {fileID: -3496671337014834511}
-  - {fileID: 5153808545904265256}
-  - {fileID: 7881937668314897056}
-  - {fileID: 6281457896059498440}
-  - {fileID: 1680056226559157093}
-  - {fileID: 5737349484226569515}
-  - {fileID: 1541110692107199242}
-  - {fileID: -3907805369991621175}
-  - {fileID: 2968409686448030623}
-  - {fileID: 3941402282537563780}
-  - {fileID: 7882389793043986960}
-  - {fileID: 4553152427353505451}
-  - {fileID: 707965717370686658}
-  - {fileID: 675099508329749360}
-  - {fileID: 8414876814881427809}
-  - {fileID: -832259776089844862}
-  - {fileID: 6061304483504220498}
-  - {fileID: 6180682469510206405}
-  - {fileID: 6369962120817241240}
-  - {fileID: 2249473367308674891}
-  - {fileID: 1739668303661705779}
-  - {fileID: -4444024635963633533}
-  - {fileID: -3846257863596063745}
+  - {fileID: 1426058570369969194}
+  - {fileID: 7978658433554824006}
+  - {fileID: 5108236658203402055}
+  - {fileID: 6528154209180637743}
+  - {fileID: -4567977373951439847}
+  - {fileID: 6293395398935158656}
+  - {fileID: 3732419500445918519}
+  - {fileID: 7216334997805728725}
+  - {fileID: 3989242286998926531}
+  - {fileID: 4798187974051097785}
+  - {fileID: 7936114311914381979}
+  - {fileID: 6122402323282544812}
+  - {fileID: 2809829324601015026}
+  - {fileID: 2571392254871668207}
+  - {fileID: 3129931182512657111}
+  - {fileID: 1312316802763365710}
+  - {fileID: 8308865601500128472}
+  - {fileID: 6915922377702026498}
+  - {fileID: 7232395455500005082}
+  - {fileID: 5044805764704424641}
+  - {fileID: 5593750113630532106}
+  - {fileID: 8577944913159932228}
+  - {fileID: -2908212835068208750}
   m_renderMode: 1
   m_latencyOptimization: 0
   m_autoColorSubmissionMode: 1
@@ -4166,7 +4166,7 @@ MonoBehaviour:
   m_Name: VisionOS
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
-  - {fileID: -3659283016143854889}
+  - {fileID: -3541454891296541592}
   m_renderMode: 1
   m_latencyOptimization: 0
   m_autoColorSubmissionMode: 1
