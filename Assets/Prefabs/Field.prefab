@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3086124474613312676}
   - component: {fileID: 168877671339358138}
   - component: {fileID: 6676885690982532954}
+  - component: {fileID: 9179230700585289020}
   m_Layer: 0
   m_Name: Field
   m_TagString: Untagged
@@ -104,14 +105,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Field
   triggerCollider: {fileID: 6676885690982532954}
-  conditionType: 2
-  triggerButton: 0
-  tiltAngleThreshold: 45
-  allowedVesselTypeEnum: 0
-  requiresFull: 0
-  waterConsumption: 50
   staminaCost: 15
   oneTimeExecution: 1
+  cooldownTime: 0.5
+  allowedVesselTypeEnum: 0
   targetRenderer: {fileID: 3086124474613312676}
   beforeMaterial: {fileID: 2100000, guid: a8372740568174e619e9202e7ee2e7cb, type: 2}
   afterMaterial: {fileID: 2100000, guid: c7d06b76effd140bdb4dbd8706f8872e, type: 2}
@@ -135,5 +132,32 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 20, z: 1}
-  m_Center: {x: 0, y: 10, z: 0}
+  m_Size: {x: 1, y: 30, z: 1}
+  m_Center: {x: 0, y: 15, z: 0}
+--- !u!54 &9179230700585289020
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 187456261588953273}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 126
+  m_CollisionDetection: 0

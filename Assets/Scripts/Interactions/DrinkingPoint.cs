@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// 飲用ポイント（口元）
+/// 飲用ポイント（口元で水を飲むとタスク完了）
+/// WaterVesselから水を注がれた時に飲用タスクを記録
 /// </summary>
 public class DrinkingPoint : WaterReceiver
 {
@@ -15,27 +16,16 @@ public class DrinkingPoint : WaterReceiver
         base.Awake();
 
         // コップのみ受け付ける
-        allowedVesselType = typeof(WaterCup);
-        // 傾ける条件を設定
-        conditionType = ConditionType.TiltDetection;
+        allowedVesselTypeEnum = AllowedVesselType.WaterCup;
         oneTimeExecution = true;
     }
 
-    protected override void ConsumeWater()
+    /// <summary>
+    /// 水を注がれた時のタスク実行
+    /// </summary>
+    protected override void ExecuteTask(float amount, float quality)
     {
-        if (currentContainer == null) return;
-
-        // 既にWaterVessel.Update()でEmptyWater()が呼ばれている可能性がある
-        // 水質は空になる前に取得する必要がある
-        float quality = currentContainer.WaterQuality;
-        float amount = currentContainer.MaxCapacity;
         bool isSafe = quality >= safeQualityThreshold;
-
-        // まだ満タンの場合は空にする（念のため）
-        if (currentContainer.IsFull)
-        {
-            currentContainer.EmptyWater();
-        }
 
         // ログ出力
         if (isSafe)

@@ -1,0 +1,4 @@
+日付,日時,変更概要,変更詳細
+2025-11-28,12:00:00,水注ぎ通知システムのリファクタリング,"競合状態を解消し責務を明確化。IWaterReceiverインターフェースを新規作成。WaterVesselが傾き検知時に範囲内のIWaterReceiverに通知する仕組みを実装。WaterReceiverをWaterInteractionBaseから独立させIWaterReceiverを実装。Laundry/Field/DrinkingPoint/WaterDisposalZoneを新設計に対応。IsFull条件をHasWater条件に変更し水が少しでもあればタスク実行可能に。変更ファイル: IWaterReceiver.cs(新規), WaterVessel.cs, WaterReceiver.cs, Laundry.cs, Field.cs, DrinkingPoint.cs, WaterDisposalZone.cs"
+2025-11-28,12:30:00,OnTriggerStay追加でタスク未実行問題を修正,"問題: 範囲内で水を汲んだ後に傾けてもReceiver数が0でタスクが実行されなかった。原因: OnTriggerEnterは範囲に入った瞬間のみ呼ばれるため、水がない状態で範囲に入り、その後水を汲んでも登録されなかった。修正: OnTriggerStayを追加し、範囲内にいる間は毎フレーム水の有無をチェックして登録するように変更。変更ファイル: WaterReceiver.cs, WaterDisposalZone.cs"
+

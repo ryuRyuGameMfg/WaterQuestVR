@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// 洗濯（水を出す）
-/// 洗濯オブジェクトの周りで水を出すとタスクとして記録
+/// 洗濯（水を注ぐとタスク完了）
+/// WaterVesselから水を注がれた時に洗濯タスクを記録
 /// </summary>
 public class Laundry : WaterReceiver
 {
@@ -13,27 +13,16 @@ public class Laundry : WaterReceiver
     {
         base.Awake();
 
-        // コップまたはバケツを受け付ける（null = すべて）
-        allowedVesselType = null; // すべての器具を受け付ける
-        // 傾ける条件を設定
-        conditionType = ConditionType.TiltDetection;
+        // すべての器具を受け付ける
+        allowedVesselTypeEnum = AllowedVesselType.All;
         oneTimeExecution = true;
     }
 
-    protected override void ConsumeWater()
+    /// <summary>
+    /// 水を注がれた時のタスク実行
+    /// </summary>
+    protected override void ExecuteTask(float amount, float quality)
     {
-        if (currentContainer == null) return;
-
-        // 既にWaterVessel.Update()でEmptyWater()が呼ばれている可能性がある
-        // ここでは水量の記録のみを行う
-        float amount = currentContainer.MaxCapacity;
-
-        // まだ満タンの場合は空にする（念のため）
-        if (currentContainer.IsFull)
-        {
-            currentContainer.EmptyWater();
-        }
-
         // ログ出力
         Debug.Log($"[{gameObject.name}] 洗濯をしました。消費水量: {amount:F0}L、水質低下: {qualityDecrease:F0}、体力消費: {staminaCost:F0}");
 

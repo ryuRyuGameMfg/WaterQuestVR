@@ -1,13 +1,16 @@
 using UnityEngine;
 
 /// <summary>
-/// 水を受けるもの（畑、飲用ポイントなど）
-/// 器具から水を空にする処理
+/// 水を受けるもの（畑、洗濯など）
+/// WaterVesselから水を注がれた時に通知を受けてタスクを実行
 /// </summary>
-public abstract class WaterReceiver : WaterInteractionBase
+public abstract class WaterReceiver : MonoBehaviour, IWaterReceiver
 {
+    [Header("トリガー設定")]
+    [Tooltip("当たり判定の範囲（Colliderが必要、Is Trigger = true）")]
+    [SerializeField] protected Collider triggerCollider;
+
     [Header("水消費設定")]
-    [SerializeField] protected float waterConsumption = 50f;   // 消費する水量
     [SerializeField] protected float staminaCost = 15f;        // 体力コスト
 
     [Header("1回実行設定")]
@@ -19,6 +22,20 @@ public abstract class WaterReceiver : WaterInteractionBase
     [Min(0f)]
     [SerializeField] protected float cooldownTime = 0.5f;
 
+    [Header("容器フィルター")]
+    [Tooltip("対象となる器具の型")]
+    [SerializeField] protected AllowedVesselType allowedVesselTypeEnum = AllowedVesselType.All;
+
+    /// <summary>
+    /// 対象となる器具の型
+    /// </summary>
+    public enum AllowedVesselType
+    {
+        All = 0,        // すべて
+        WaterBucket = 1, // バケツのみ
+        WaterCup = 2     // コップのみ
+    }
+
     [Header("視覚的フィードバック")]
     [Tooltip("マテリアルを変更するRenderer（自動取得も可能）")]
     [SerializeField] protected Renderer targetRenderer;
@@ -27,17 +44,57 @@ public abstract class WaterReceiver : WaterInteractionBase
     [Tooltip("タスク実行後のマテリアル（完了後の色）")]
     [SerializeField] protected Material afterMaterial;
 
-    protected bool hasExecuted = false;
+    // 内部で使用するType（enumから自動変換）
+    protected System.Type allowedVesselType = null;
+
     protected bool hasBeenCompleted = false;
     private float lastExecutionTime = -1f;
 
-    protected override void Awake()
-    {
-        base.Awake();
+    // 現在範囲内にいる器具
+    private WaterVessel currentVessel = null;
 
-        // デフォルト設定（インスペクターで変更可能）
-        requiresFull = true; // 満タンの器具が必要
-        // conditionType はインスペクターで設定（デフォルト: TiltDetection）
+    // IWaterReceiver実装
+    public bool CanReceiveWater => !hasBeenCompleted || !oneTimeExecution;
+
+    protected virtual void Awake()
+    {
+        Debug.Log($"[{gameObject.name}] WaterReceiver.Awake() が呼ばれました");
+
+        // Trigger Colliderの設定
+        if (triggerCollider == null)
+        {
+            triggerCollider = GetComponent<Collider>();
+            if (triggerCollider == null)
+            {
+                triggerCollider = GetComponentInChildren<Collider>();
+            }
+        }
+
+        if (triggerCollider != null)
+        {
+            Debug.Log($"[{gameObject.name}] Trigger Collider: {triggerCollider.gameObject.name}, IsTrigger={triggerCollider.isTrigger}");
+            if (!triggerCollider.isTrigger)
+            {
+                Debug.LogWarning($"[{gameObject.name}] Trigger Collider の Is Trigger が false です。true に設定してください。");
+            }
+        }
+        else
+        {
+            Debug.LogError($"[{gameObject.name}] Trigger Collider が見つかりません。");
+        }
+
+        // Rigidbodyの確認（OnTriggerEnterが呼ばれるために必要）
+        Rigidbody rb = GetComponent<Rigidbody>();
+        Rigidbody rbChild = GetComponentInChildren<Rigidbody>();
+        if (rb == null && rbChild == null)
+        {
+            Debug.LogWarning($"[{gameObject.name}] Rigidbodyが見つかりません。OnTriggerEnterが呼ばれるには、少なくとも一方のオブジェクトにRigidbodyが必要です。");
+        }
+        else
+        {
+            Rigidbody foundRb = rb != null ? rb : rbChild;
+            Debug.Log($"[{gameObject.name}] Rigidbody: {foundRb.gameObject.name}, IsKinematic={foundRb.isKinematic}");
+        }
 
         // Rendererの自動取得
         if (targetRenderer == null)
@@ -54,70 +111,146 @@ public abstract class WaterReceiver : WaterInteractionBase
         {
             targetRenderer.material = beforeMaterial;
         }
+
+        // enumからTypeに変換
+        ConvertVesselTypeEnumToType();
     }
 
-    protected override void OnContainerEntered(WaterVessel container)
+    /// <summary>
+    /// enumからTypeに変換
+    /// </summary>
+    private void ConvertVesselTypeEnumToType()
     {
-        // 1回実行制限のリセット
-        if (oneTimeExecution)
+        switch (allowedVesselTypeEnum)
         {
-            hasExecuted = false;
+            case AllowedVesselType.All:
+                allowedVesselType = null;
+                break;
+            case AllowedVesselType.WaterBucket:
+                allowedVesselType = typeof(WaterBucket);
+                break;
+            case AllowedVesselType.WaterCup:
+                allowedVesselType = typeof(WaterCup);
+                break;
+            default:
+                allowedVesselType = null;
+                break;
         }
     }
 
-    protected override void OnContainerExited(WaterVessel container)
+    /// <summary>
+    /// 器具がトリガー範囲に入った時
+    /// </summary>
+    protected virtual void OnTriggerEnter(Collider other)
     {
-        // 範囲外に出たら実行フラグをリセット
-        hasExecuted = false;
+        Debug.Log($"[{gameObject.name}] OnTriggerEnter: {other.gameObject.name}");
+
+        WaterVessel vessel = other.GetComponent<WaterVessel>();
+        if (vessel == null)
+        {
+            Debug.Log($"[{gameObject.name}] WaterVesselコンポーネントなし: {other.gameObject.name}");
+            return;
+        }
+
+        // 器具の型チェック
+        if (!IsAllowedVesselType(vessel))
+        {
+            Debug.Log($"[{gameObject.name}] 許可されていない器具タイプ: {vessel.GetType().Name}");
+            return;
+        }
+
+        // 器具を記録（水の有無に関わらず）
+        currentVessel = vessel;
+
+        // 水がある場合は登録
+        if (vessel.HasWater)
+        {
+            vessel.RegisterReceiver(this);
+            Debug.Log($"[{gameObject.name}] 器具を登録しました（水あり）: {vessel.gameObject.name}");
+        }
+        else
+        {
+            Debug.Log($"[{gameObject.name}] 器具が範囲内に入りました（水なし）: {vessel.gameObject.name}");
+        }
     }
 
-    protected override bool CheckCondition()
+    /// <summary>
+    /// 器具がトリガー範囲内にいる間（毎フレーム）
+    /// 水を汲んだ後に範囲内で傾けるケースに対応
+    /// </summary>
+    protected virtual void OnTriggerStay(Collider other)
+    {
+        WaterVessel vessel = other.GetComponent<WaterVessel>();
+        if (vessel == null) return;
+
+        // 現在の器具でない場合は無視
+        if (vessel != currentVessel) return;
+
+        // 器具の型チェック
+        if (!IsAllowedVesselType(vessel)) return;
+
+        // 水がある場合は登録（まだ登録されていない場合）
+        if (vessel.HasWater)
+        {
+            vessel.RegisterReceiver(this);
+        }
+    }
+
+    /// <summary>
+    /// 器具がトリガー範囲から出た時
+    /// </summary>
+    protected virtual void OnTriggerExit(Collider other)
+    {
+        Debug.Log($"[{gameObject.name}] OnTriggerExit: {other.gameObject.name}");
+
+        WaterVessel vessel = other.GetComponent<WaterVessel>();
+        if (vessel == null) return;
+
+        if (vessel == currentVessel)
+        {
+            // WaterVesselから自分を登録解除
+            vessel.UnregisterReceiver(this);
+            currentVessel = null;
+
+            Debug.Log($"[{gameObject.name}] 器具が範囲外に出ました: {vessel.gameObject.name}");
+        }
+    }
+
+    /// <summary>
+    /// 許可された器具の型かチェック
+    /// </summary>
+    private bool IsAllowedVesselType(WaterVessel vessel)
+    {
+        if (allowedVesselType == null) return true; // すべて許可
+
+        System.Type vesselType = vessel.GetType();
+        return vesselType == allowedVesselType || vesselType.IsSubclassOf(allowedVesselType);
+    }
+
+    /// <summary>
+    /// IWaterReceiver.ReceiveWater の実装
+    /// WaterVesselから水を注がれた時に呼ばれる
+    /// </summary>
+    public bool ReceiveWater(float amount, float quality)
     {
         // クールダウン中のチェック
         if (Time.time - lastExecutionTime < cooldownTime)
         {
+            Debug.Log($"[{gameObject.name}] クールダウン中です");
             return false;
         }
 
         // 1回実行制限のチェック
-        if (oneTimeExecution && hasExecuted)
+        if (oneTimeExecution && hasBeenCompleted)
         {
-            Debug.Log($"[{gameObject.name}] CheckCondition: 既に実行済みです（hasExecuted=true, oneTimeExecution=true）");
+            Debug.Log($"[{gameObject.name}] 既に完了済みです");
             return false;
         }
 
-        bool result = base.CheckCondition();
-        if (result)
-        {
-            Debug.Log($"[{gameObject.name}] CheckCondition: 条件が満たされました（hasExecuted={hasExecuted}, oneTimeExecution={oneTimeExecution}）");
-        }
-        return result;
-    }
+        // タスク実行
+        ExecuteTask(amount, quality);
 
-    protected override void ExecuteTask()
-    {
-        if (currentContainer == null) return;
-
-        // 満タンでない場合はタスクを実行しない
-        // （WaterVessel.Update()で別の場所で傾けて空になった器具が範囲内に入った場合を防ぐ）
-        if (!currentContainer.IsFull)
-        {
-            Debug.Log($"[{gameObject.name}] ExecuteTask: 器具が既に空です。タスクを実行しません。");
-            return;
-        }
-
-        // 1回実行制限のチェック
-        if (oneTimeExecution && hasExecuted)
-        {
-            Debug.Log($"[{gameObject.name}] ExecuteTask: 既に実行済みです。");
-            return;
-        }
-
-        // 満タンの器具でタスクを実行
-        ConsumeWater();
-        hasExecuted = true;
-        isExecuting = true;
-        lastExecutionTime = Time.time; // クールダウンタイマーを更新
+        lastExecutionTime = Time.time;
 
         // 視覚的フィードバック（マテリアル変更）
         if (!hasBeenCompleted)
@@ -125,12 +258,16 @@ public abstract class WaterReceiver : WaterInteractionBase
             UpdateMaterial();
             hasBeenCompleted = true;
         }
+
+        return true;
     }
 
     /// <summary>
-    /// 水を消費する処理（サブクラスで実装）
+    /// タスクを実行（サブクラスで実装）
     /// </summary>
-    protected abstract void ConsumeWater();
+    /// <param name="amount">注がれた水量</param>
+    /// <param name="quality">注がれた水質</param>
+    protected abstract void ExecuteTask(float amount, float quality);
 
     /// <summary>
     /// マテリアルを変更して視覚的フィードバックを提供
@@ -139,7 +276,7 @@ public abstract class WaterReceiver : WaterInteractionBase
     {
         if (targetRenderer == null)
         {
-            Debug.LogWarning($"[{gameObject.name}] Target Rendererが設定されていません。マテリアルを更新できません。");
+            Debug.LogWarning($"[{gameObject.name}] Target Rendererが設定されていません。");
             return;
         }
 

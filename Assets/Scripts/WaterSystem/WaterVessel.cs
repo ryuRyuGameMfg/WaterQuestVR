@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -37,8 +38,12 @@ public abstract class WaterVessel : MonoBehaviour
     private bool wasTiltedLastFrame = false;
     private float lastTiltTime = -1f;
 
+    // 現在範囲内にいるWaterReceiver（トリガー範囲内）
+    private readonly List<IWaterReceiver> receiversInRange = new List<IWaterReceiver>();
+
     // プロパティ
     public bool IsFull => currentWaterAmount >= maxCapacity;
+    public bool HasWater => currentWaterAmount > 0f;
     public float MaxCapacity => maxCapacity;
     public float WaterQuality => waterQuality;
     public float CurrentWaterAmount => currentWaterAmount;
@@ -308,7 +313,31 @@ public abstract class WaterVessel : MonoBehaviour
     }
 
     /// <summary>
-    /// 傾けた瞬間の処理（水を空にする）
+    /// WaterReceiverのトリガー範囲に入った時に呼ばれる
+    /// </summary>
+    public void RegisterReceiver(IWaterReceiver receiver)
+    {
+        if (receiver != null && !receiversInRange.Contains(receiver))
+        {
+            receiversInRange.Add(receiver);
+            Debug.Log($"[{gameObject.name}] WaterReceiver登録: {receiver.GetType().Name}");
+        }
+    }
+
+    /// <summary>
+    /// WaterReceiverのトリガー範囲から出た時に呼ばれる
+    /// </summary>
+    public void UnregisterReceiver(IWaterReceiver receiver)
+    {
+        if (receiver != null && receiversInRange.Contains(receiver))
+        {
+            receiversInRange.Remove(receiver);
+            Debug.Log($"[{gameObject.name}] WaterReceiver登録解除: {receiver.GetType().Name}");
+        }
+    }
+
+    /// <summary>
+    /// 傾けた瞬間の処理（水を注ぐ）
     /// </summary>
     protected virtual void OnTilted()
     {
@@ -320,26 +349,73 @@ public abstract class WaterVessel : MonoBehaviour
             return;
         }
 
-        // 水を空にする
+        // 水の情報を保存
         float amount = currentWaterAmount;
         float quality = waterQuality;
 
-        EmptyWater();
         lastTiltTime = Time.time; // クールダウンタイマーを更新
 
-        Debug.Log($"[{gameObject.name}] 傾けたため、水が空になりました。水量: {amount:F0}L");
+        Debug.Log($"[{gameObject.name}] 傾けました。水量: {amount:F0}L、範囲内のReceiver数: {receiversInRange.Count}");
 
-        // タスク場所外で傾けた場合は廃棄として記録
-        OnTiltedOutsideTask(amount, quality);
+        // 1. 範囲内のWaterReceiverに通知（タスク実行）
+        bool taskExecuted = NotifyWaterReceivers(amount, quality);
+
+        // 2. 水を空にする
+        EmptyWater();
+
+        // 3. タスク場所外だった場合は廃棄として記録
+        if (!taskExecuted)
+        {
+            OnTiltedOutsideTask(amount, quality);
+        }
+    }
+
+    /// <summary>
+    /// 範囲内のWaterReceiverに水を注ぐ通知を送る
+    /// </summary>
+    /// <returns>いずれかのReceiverがタスクを実行したかどうか</returns>
+    private bool NotifyWaterReceivers(float amount, float quality)
+    {
+        bool anyTaskExecuted = false;
+
+        // 無効なReceiverを除去しながら通知
+        for (int i = receiversInRange.Count - 1; i >= 0; i--)
+        {
+            IWaterReceiver receiver = receiversInRange[i];
+
+            // nullチェック（Destroyされた場合など）
+            if (receiver == null || (receiver is MonoBehaviour mb && mb == null))
+            {
+                receiversInRange.RemoveAt(i);
+                continue;
+            }
+
+            // 受け取れる状態かチェック
+            if (!receiver.CanReceiveWater)
+            {
+                Debug.Log($"[{gameObject.name}] {receiver.GetType().Name} は水を受け取れない状態です");
+                continue;
+            }
+
+            // 水を注ぐ通知
+            bool executed = receiver.ReceiveWater(amount, quality);
+            if (executed)
+            {
+                Debug.Log($"[{gameObject.name}] {receiver.GetType().Name} がタスクを実行しました");
+                anyTaskExecuted = true;
+                break; // 1つのReceiverがタスクを実行したら終了
+            }
+        }
+
+        return anyTaskExecuted;
     }
 
     /// <summary>
     /// タスク場所外で傾けられた時の処理（廃棄として記録）
-    /// タスク場所内の場合は、WaterReceiverが処理するため、ここでは何もしない
     /// </summary>
     protected virtual void OnTiltedOutsideTask(float amount, float quality)
     {
-        // デフォルトでは何もしない（タスク場所内の場合はWaterReceiverが処理）
-        // タスク場所外の場合は、WaterDisposalZoneが処理する
+        // デフォルトでは何もしない
+        // サブクラスでオーバーライドして廃棄処理を実装
     }
 }

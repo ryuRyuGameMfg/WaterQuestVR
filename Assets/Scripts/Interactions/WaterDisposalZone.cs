@@ -2,63 +2,79 @@ using UnityEngine;
 
 /// <summary>
 /// 水捨てエリア（範囲内で器具を傾けたら水を捨てる）
+/// WaterVesselから水を注がれた時に廃棄タスクを記録
 /// </summary>
-public class WaterDisposalZone : MonoBehaviour
+public class WaterDisposalZone : MonoBehaviour, IWaterReceiver
 {
     [Header("廃棄設定")]
     [SerializeField] private float qualityDecrease = 10f;  // 環境汚染
     [SerializeField] private float staminaCost = 2f;       // 体力コスト
 
-    private WaterVessel currentContainer = null;
-    private bool hasDisposed = false; // 1回のみ実行
+    // IWaterReceiver実装（廃棄エリアは常に水を受け取れる）
+    public bool CanReceiveWater => true;
+
+    // 現在範囲内にいる器具
+    private WaterVessel currentVessel = null;
 
     private void OnTriggerEnter(Collider other)
     {
         // 器具（バケツまたはコップ）が範囲内に入った
-        WaterVessel container = other.GetComponent<WaterVessel>();
-        if (container != null)
+        WaterVessel vessel = other.GetComponent<WaterVessel>();
+        if (vessel == null) return;
+
+        currentVessel = vessel;
+
+        if (vessel.HasWater)
         {
-            currentContainer = container;
-            hasDisposed = false; // リセット
+            // WaterVesselに自分を登録
+            vessel.RegisterReceiver(this);
+            Debug.Log($"[{gameObject.name}] 器具が廃棄エリアに入りました（水あり）: {vessel.gameObject.name}");
+        }
+        else
+        {
+            Debug.Log($"[{gameObject.name}] 器具が廃棄エリアに入りました（水なし）: {vessel.gameObject.name}");
+        }
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        // 水を汲んだ後に範囲内で傾けるケースに対応
+        WaterVessel vessel = other.GetComponent<WaterVessel>();
+        if (vessel == null || vessel != currentVessel) return;
+
+        if (vessel.HasWater)
+        {
+            vessel.RegisterReceiver(this);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
         // 器具が範囲外に出た
-        WaterVessel container = other.GetComponent<WaterVessel>();
-        if (container == currentContainer)
+        WaterVessel vessel = other.GetComponent<WaterVessel>();
+        if (vessel == null) return;
+
+        if (vessel == currentVessel)
         {
-            currentContainer = null;
+            // WaterVesselから自分を登録解除
+            vessel.UnregisterReceiver(this);
+            currentVessel = null;
+            Debug.Log($"[{gameObject.name}] 器具が廃棄エリアから出ました: {vessel.gameObject.name}");
         }
     }
 
-    private void Update()
+    /// <summary>
+    /// IWaterReceiver.ReceiveWater の実装
+    /// WaterVesselから水を注がれた時に呼ばれる
+    /// </summary>
+    public bool ReceiveWater(float amount, float quality)
     {
-        // 範囲内で器具を傾けたら水を捨てる
-        if (currentContainer != null &&
-            currentContainer.IsFull &&
-            currentContainer.IsPouringAngle() &&
-            !hasDisposed)
-        {
-            DisposeWater(currentContainer);
-        }
-    }
-
-    private void DisposeWater(WaterVessel container)
-    {
-        // 捨てる水量
-        float amount = container.MaxCapacity;
-
-        // 水を空にする
-        container.EmptyWater();
-
         // ログ出力
         Debug.Log($"[{gameObject.name}] 水を捨てました。廃棄水量: {amount:F0}L、水質低下: {qualityDecrease:F0}、体力消費: {staminaCost:F0}");
 
         // GameManagerに記録
         GameManager.Instance.RecordWaste(amount, qualityDecrease, staminaCost);
 
-        hasDisposed = true; // 1回のみ実行
+        return true;
     }
 }
